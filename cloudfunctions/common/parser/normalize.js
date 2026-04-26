@@ -8,7 +8,7 @@ function normalizeText(text) {
 }
 
 function normalizeAnswer(raw, options) {
-  const value = String(raw || '').replace(/\s/g, '').toUpperCase()
+  const value = String(raw || '').trim().replace(/\s/g, '').toUpperCase()
   const judgeMap = {
     正确: 'A',
     对: 'A',
@@ -16,18 +16,36 @@ function normalizeAnswer(raw, options) {
     错误: 'B',
     错: 'B',
     '×': 'B',
+    姝ｇ: 'A',
+    '姝ｇ‘': 'A',
+    瀵: 'A',
+    '瀵?': 'A',
+    '鈭?': 'A',
+    閿: 'B',
+    '閿?': 'B',
+    閿欒: 'B',
+    '閿欒': 'B',
+    脳: 'B',
   }
   const mapped = judgeMap[value] || value
-  const optionKeys = new Set((options || []).map((option) => option.key))
   return mapped
     .split('')
     .filter((key, index, arr) => /^[A-H]$/.test(key) && arr.indexOf(key) === index)
-    .filter((key) => optionKeys.size === 0 || optionKeys.has(key))
 }
 
 function inferType(options, answerKeys) {
-  const optionText = options.map((option) => option.text).join('')
-  if (/正确|错误|对|错/.test(optionText) && options.length <= 2) {
+  const optionTexts = options.map((option) => option.text.trim())
+  const judgePairs = [
+    ['正确', '错误'],
+    ['对', '错'],
+    ['姝ｇ‘', '閿欒'],
+    ['瀵?', '閿?'],
+  ]
+  const isJudge = options.length === 2 && judgePairs.some(([truthy, falsy]) => {
+    return optionTexts.includes(truthy) && optionTexts.includes(falsy)
+  })
+
+  if (isJudge) {
     return 'judge'
   }
   return answerKeys.length > 1 ? 'multiple' : 'single'
