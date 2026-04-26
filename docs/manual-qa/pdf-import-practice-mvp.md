@@ -5,6 +5,7 @@
 - Project path: `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp`
 - Bun path: `F:\.bun\bin\bun.exe`
 - WeChat mini program target: `mp-weixin`
+- WeChat Developer Tools import path after build: `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp\dist\build\mp-weixin`
 - CloudBase environment: use the project CloudBase environment configured in WeChat Developer Tools / uniCloud before testing. Confirm the same environment is selected for cloud function upload, database collection creation, and runtime calls.
 
 ## Cloud Collections
@@ -42,13 +43,13 @@ Upload and deploy these cloud functions to the selected CloudBase environment:
 - `practiceDetail`
 - `answerSubmit`
 
+Each cloud function depends on the shared code in `cloudfunctions/common`. During deployment, confirm the project toolchain packages and uploads `common` with every function, or confirm sibling `common` resolution is available in the deployed CloudBase environment.
+
 ## Test PDF Content
 
 Copy the following content into a text document, export or print it as a PDF, and use that PDF for import testing:
 
 ```text
-刷题导入测试题
-
 1. 单选题：下列哪一项是中华人民共和国的首都？
 A. 上海
 B. 北京
@@ -76,18 +77,20 @@ D. 52
 
 ## QA Steps
 
-1. Open the project in WeChat Developer Tools from `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp`, select the correct CloudBase environment, then compile the `mp-weixin` mini program.
-2. Launch the home page and confirm `userLogin` runs successfully. The app should create or load the current user without a visible login error.
-3. Upload the test PDF created from the content above.
-4. Confirm the created material appears with status `parsing`.
-5. Trigger `parseRunner` with the parse job id for the material. If the current UI does not directly trigger the runner, call it from the CloudBase console or by a temporary cloud function invocation, passing the parse job id.
-6. Wait for parsing to finish and confirm the material enters `reviewing`.
-7. Open the candidate review flow. Verify candidates are listed, open a candidate detail, edit fields such as title, options, answer, or explanation, and save.
-8. Confirm import from the reviewed candidates.
-9. Start a practice session from the imported material. Before submitting an answer, confirm the correct answer and explanation are not shown.
-10. Submit a correct answer and confirm the result state marks it correct.
-11. Submit an incorrect answer in another practice attempt and confirm the result page shows the score and explanation.
-12. Import the same reviewed candidates again or repeat the same PDF import flow. Confirm duplicate questions are not added.
+1. Run `F:\.bun\bin\bun.exe run build:mp-weixin`.
+2. Open `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp\dist\build\mp-weixin` in WeChat Developer Tools, select the correct CloudBase environment, then compile the mini program.
+3. Launch the home page and confirm `userLogin` runs successfully. The app should create or load the current user without a visible login error.
+4. Upload the test PDF created from the content above.
+5. Confirm the created material appears with status `parsing`.
+6. Trigger `parseRunner` with the parse job id for the material. If the current UI does not directly trigger the runner, call it from the CloudBase console or by a temporary cloud function invocation. Pass JSON as `{ "jobId": "parse_job_<materialId>" }`, or get the actual parse job `_id` from `parseStatus` / the `parse_jobs` collection and pass `{ "jobId": "..." }`.
+7. Wait for parsing to finish and confirm the material enters `reviewing`.
+8. Open the candidate review flow. The sample PDF should produce 3 ready candidates.
+9. Open a candidate detail, edit fields such as stem / 题干, options, answer, or explanation, and save.
+10. Confirm import from the reviewed candidates. The expected `importedCount` is `3`.
+11. Call the same material's `importConfirm` cloud function / API again. The expected `importedCount` is `0`, or the UI import button is disabled / shows no importable questions. This verifies idempotency for the same reviewed candidate batch; it does not verify cross-material or same-content PDF deduplication.
+12. Start a practice session from the imported material. Before submitting an answer, confirm the correct answer and explanation are not shown.
+13. Submit a correct answer and confirm the result state marks it correct.
+14. Submit an incorrect answer in another practice attempt and confirm the result page shows the score and explanation.
 
 ## Troubleshooting / Expected Warnings
 
