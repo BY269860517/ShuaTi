@@ -29,7 +29,13 @@ const groupedCandidates = computed(() => {
 })
 
 const importableCount = computed(() => {
-  return candidates.value.filter((candidate) => candidate.status !== 'imported').length
+  return candidates.value.filter((candidate) => candidate.status === 'ready' && !candidate.importedQuestionId).length
+})
+
+const importButtonText = computed(() => {
+  if (confirming.value) return '导入中'
+  if (importableCount.value === 0) return '暂无可导入题目'
+  return `确认导入（${importableCount.value}）`
 })
 
 onLoad((options) => {
@@ -64,7 +70,7 @@ async function loadCandidates() {
 }
 
 async function confirmImport() {
-  if (!materialId.value || confirming.value) return
+  if (!materialId.value || confirming.value || importableCount.value === 0) return
 
   confirming.value = true
   errorMessage.value = ''
@@ -128,10 +134,10 @@ function statusType(status: CandidateStatus): 'neutral' | 'success' | 'warning' 
         class="bottom-actions__button"
         type="default"
         :loading="confirming"
-        :disabled="confirming || !candidates.length"
+        :disabled="confirming || !candidates.length || importableCount === 0"
         @click="confirmImport"
       >
-        {{ confirming ? '导入中' : `确认导入（${importableCount}）` }}
+        {{ importButtonText }}
       </button>
     </view>
   </view>

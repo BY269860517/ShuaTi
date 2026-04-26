@@ -65,6 +65,14 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('safe-area-inset-bottom')
   })
 
+  test('candidate review import count matches backend import eligibility', () => {
+    const source = read('pages/import/review.vue')
+
+    expect(source).toContain("candidate.status === 'ready' && !candidate.importedQuestionId")
+    expect(source).toContain('importableCount === 0')
+    expect(source).not.toContain("candidate.status !== 'imported'")
+  })
+
   test('candidate edit page validates and saves editable fields', () => {
     const source = read('pages/import/edit.vue')
 
