@@ -1,0 +1,211 @@
+<script setup lang="ts">
+import type { Candidate } from '@/common/types'
+import { CANDIDATE_STATUS_TEXT } from '@/common/constants/status'
+import StatusBadge from './StatusBadge.vue'
+
+const props = defineProps<{ candidate: Candidate }>()
+const emit = defineEmits<{ edit: [id: string] }>()
+
+function statusType(status: Candidate['status']): 'neutral' | 'success' | 'warning' | 'danger' {
+  if (status === 'ready' || status === 'imported') return 'success'
+  if (status === 'invalid') return 'danger'
+  if (status === 'need_review' || status === 'importing') return 'warning'
+  return 'neutral'
+}
+
+function handleEdit() {
+  if (props.candidate.status === 'imported') return
+  emit('edit', props.candidate._id)
+}
+</script>
+
+<template>
+  <view class="candidate-card">
+    <view class="candidate-card__header">
+      <view class="candidate-card__heading">
+        <text class="candidate-card__number">
+          第{{ props.candidate.questionNo || '-' }}题
+        </text>
+        <StatusBadge
+          :text="CANDIDATE_STATUS_TEXT[props.candidate.status]"
+          :type="statusType(props.candidate.status)"
+        />
+      </view>
+      <button
+        v-if="props.candidate.status !== 'imported'"
+        class="candidate-card__edit"
+        type="default"
+        @click.stop="handleEdit"
+      >
+        编辑
+      </button>
+      <text v-else class="candidate-card__imported">已导入</text>
+    </view>
+
+    <text class="candidate-card__stem">{{ props.candidate.stem }}</text>
+
+    <view v-if="props.candidate.options.length" class="candidate-card__options">
+      <view
+        v-for="option in props.candidate.options"
+        :key="option.key"
+        class="candidate-card__option"
+      >
+        <text class="candidate-card__option-key">{{ option.key }}</text>
+        <text class="candidate-card__option-text">{{ option.text }}</text>
+      </view>
+    </view>
+
+    <view class="candidate-card__detail">
+      <text class="candidate-card__detail-label">答案</text>
+      <text class="candidate-card__detail-text">
+        {{ props.candidate.answerKeys.join('、') || '-' }}
+      </text>
+    </view>
+
+    <view v-if="props.candidate.explanation" class="candidate-card__detail">
+      <text class="candidate-card__detail-label">解析</text>
+      <text class="candidate-card__detail-text">{{ props.candidate.explanation }}</text>
+    </view>
+
+    <view v-if="props.candidate.validationErrors.length" class="candidate-card__errors">
+      <text
+        v-for="error in props.candidate.validationErrors"
+        :key="error"
+        class="candidate-card__error"
+      >
+        {{ error }}
+      </text>
+    </view>
+  </view>
+</template>
+
+<style scoped lang="scss">
+.candidate-card {
+  padding: 24rpx;
+  border-radius: 8rpx;
+  background: #ffffff;
+  border: 1rpx solid #dce3ec;
+}
+
+.candidate-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.candidate-card__heading {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+}
+
+.candidate-card__number {
+  margin-right: 16rpx;
+  color: #202938;
+  font-size: 28rpx;
+  line-height: 40rpx;
+  font-weight: 600;
+}
+
+.candidate-card__edit {
+  width: 112rpx;
+  height: 60rpx;
+  margin: 0 0 0 16rpx;
+  padding: 0;
+  border-radius: 8rpx;
+  background: #ffffff;
+  color: #1f5f8b;
+  border: 1rpx solid #b8c7d8;
+  font-size: 26rpx;
+  line-height: 60rpx;
+}
+
+.candidate-card__imported {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  color: #697586;
+  font-size: 26rpx;
+  line-height: 40rpx;
+}
+
+.candidate-card__stem {
+  display: block;
+  margin-top: 20rpx;
+  color: #202938;
+  font-size: 30rpx;
+  line-height: 44rpx;
+  word-break: break-word;
+}
+
+.candidate-card__options {
+  margin-top: 20rpx;
+}
+
+.candidate-card__option {
+  display: flex;
+  align-items: flex-start;
+  padding: 10rpx 0;
+}
+
+.candidate-card__option-key {
+  flex-shrink: 0;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 8rpx;
+  background: #eef2f7;
+  color: #364152;
+  font-size: 26rpx;
+  line-height: 48rpx;
+  text-align: center;
+  font-weight: 600;
+}
+
+.candidate-card__option-text {
+  flex: 1;
+  min-width: 0;
+  margin-left: 16rpx;
+  color: #364152;
+  font-size: 28rpx;
+  line-height: 42rpx;
+  word-break: break-word;
+}
+
+.candidate-card__detail {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 18rpx;
+}
+
+.candidate-card__detail-label {
+  flex-shrink: 0;
+  width: 72rpx;
+  color: #697586;
+  font-size: 26rpx;
+  line-height: 38rpx;
+}
+
+.candidate-card__detail-text {
+  flex: 1;
+  min-width: 0;
+  color: #364152;
+  font-size: 26rpx;
+  line-height: 38rpx;
+  word-break: break-word;
+}
+
+.candidate-card__errors {
+  margin-top: 18rpx;
+  padding: 16rpx;
+  border-radius: 8rpx;
+  background: #fdecec;
+  border: 1rpx solid #f2c3c3;
+}
+
+.candidate-card__error {
+  display: block;
+  color: #9a2f2f;
+  font-size: 24rpx;
+  line-height: 36rpx;
+}
+</style>
