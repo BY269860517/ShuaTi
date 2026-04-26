@@ -32,6 +32,12 @@ function createFakeDb() {
 
     return {
       async add({ data }) {
+        if (data._id && rows.some((row) => row._id === data._id)) {
+          const error = new Error('duplicate key')
+          error.code = 'duplicate_key'
+          throw error
+        }
+
         const next = (counters.get(name) || 0) + 1
         counters.set(name, next)
         const row = { _id: `${name}_${next}`, ...structuredClone(data) }

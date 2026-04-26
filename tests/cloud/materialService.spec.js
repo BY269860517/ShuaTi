@@ -24,6 +24,35 @@ describe('material services', () => {
     expect(result.updatedAt).toBe('2026-04-27T00:00:00.000Z')
   })
 
+  it('recovers when user creation races with another first login', async () => {
+    const db = createFakeDb()
+    const users = db.collection('users')
+    const originalCollection = db.collection
+    db.collection = (name) => (name === 'users' ? users : originalCollection(name))
+    users.add = async ({ data }) => {
+      users._rows.push({
+        ...structuredClone(data),
+        createdAt: '2026-04-26T00:00:00.000Z',
+        updatedAt: '2026-04-26T00:00:00.000Z',
+      })
+      const error = new Error('duplicate key')
+      error.code = 'duplicate_key'
+      throw error
+    }
+
+    const result = await upsertUser({ db, openid: 'user_a', now: '2026-04-27T00:00:00.000Z' })
+    const stored = await users.doc('user_a').get()
+
+    expect(result).toMatchObject({
+      _id: 'user_a',
+      openid: 'user_a',
+      created: false,
+      createdAt: '2026-04-26T00:00:00.000Z',
+      updatedAt: '2026-04-27T00:00:00.000Z',
+    })
+    expect(stored.data[0].updatedAt).toBe('2026-04-27T00:00:00.000Z')
+  })
+
   it('creates material with owner from server openid', async () => {
     const db = createFakeDb()
     const material = await createMaterial({

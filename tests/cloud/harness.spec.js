@@ -70,6 +70,16 @@ describe('cloud service harness', () => {
     expect(result.data[0].status).toBe('ready')
   })
 
+  it('rejects duplicate caller-provided document ids', async () => {
+    const db = createFakeDb()
+    const users = db.collection('users')
+    await users.add({ data: { _id: 'user_a', openid: 'user_a' } })
+
+    await expect(users.add({ data: { _id: 'user_a', openid: 'user_a' } })).rejects.toMatchObject({
+      code: 'duplicate_key',
+    })
+  })
+
   it('returns zero updated count for missing document id', async () => {
     const db = createFakeDb()
     const questions = db.collection('questions')
