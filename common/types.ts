@@ -46,7 +46,7 @@ export type CreatedMaterial = Material & {
 export interface Candidate {
   _id: string
   materialId: string
-  questionNo?: number
+  questionNo?: string
   type: QuestionType
   stem: string
   options: OptionItem[]
@@ -69,7 +69,7 @@ export interface SafeQuestion {
   type: QuestionType
   stem: string
   options: OptionItem[]
-  questionNo?: number
+  questionNo?: string
   ownerOpenid?: string
   sourcePageNo?: number | null
   sourceCandidateUpdatedAt?: string

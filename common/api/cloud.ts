@@ -11,7 +11,7 @@ import type {
   UserInfo,
 } from '../types'
 
-declare const wx: {
+interface WxRuntime {
   cloud: {
     callFunction<T = unknown>(options: { name: string; data?: object }): Promise<{ result?: T }>
   }
@@ -55,16 +55,35 @@ export interface AnswerSubmitInput {
 }
 
 export async function callFunction<T>(name: string, data: object = {}): Promise<T> {
-  const response = await wx.cloud.callFunction({ name, data }) as CloudFunctionResult<T>
+  const response = await getWxRuntime().cloud.callFunction({ name, data }) as CloudFunctionResult<T>
   const result = response.result
 
-  if (!result?.ok) {
+  if (!isCloudFunctionResponse(result)) {
+    throwCloudError('invalid_response', '云函数响应格式错误')
+  }
+
+  if (result.ok === false) {
     const error = new Error(result?.error?.message || '请求失败') as CloudFunctionError
     error.code = result?.error?.code
     throw error
   }
 
   return result.data as T
+}
+
+function getWxRuntime(): WxRuntime {
+  return (globalThis as { wx?: WxRuntime }).wx as WxRuntime
+}
+
+function isCloudFunctionResponse<T>(value: unknown): value is CloudFunctionResponse<T> {
+  if (!value || typeof value !== 'object') return false
+  return (value as { ok?: unknown }).ok === true || (value as { ok?: unknown }).ok === false
+}
+
+function throwCloudError(code: string, message: string): never {
+  const error = new Error(message) as CloudFunctionError
+  error.code = code
+  throw error
 }
 
 export const api = {
