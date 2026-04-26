@@ -219,6 +219,7 @@ Write:
     "@dcloudio/types": "3.4.30",
     "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5000820260420001",
     "@vue/compiler-sfc": "3.4.21",
+    "sass": "1.99.0",
     "typescript": "5.4.5",
     "vite": "5.2.8",
     "vitest": "1.6.1"
