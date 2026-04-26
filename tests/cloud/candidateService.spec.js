@@ -1,6 +1,6 @@
 const { createFakeDb } = require('./fakeDb')
-const { updateCandidate, listCandidates } = require('../../cloudfunctions/common/services/candidateService')
-const { confirmImport } = require('../../cloudfunctions/common/services/importService')
+const { updateCandidate, listCandidates, getCandidateDetail } = require('../../cloudfunctions/common/services/candidateService')
+const { confirmImport, createQuestionId } = require('../../cloudfunctions/common/services/importService')
 
 async function seedCandidate(db, overrides = {}) {
   const result = await db.collection('parse_candidates').add({
@@ -35,6 +35,27 @@ describe('candidate service', () => {
 
     expect(result).toHaveLength(1)
     expect(result[0].ownerOpenid).toBe('user_a')
+  })
+
+  it('does not leak import claim metadata in list or detail responses', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db, {
+      status: 'importing',
+      importClaimToken: 'secret-token',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+      importClaimUntil: '2026-04-26T00:05:00.000Z',
+    })
+
+    const list = await listCandidates({ db, openid: 'user_a', materialId: 'material_1' })
+    const detail = await getCandidateDetail({ db, openid: 'user_a', candidateId })
+
+    expect(list[0].status).toBe('importing')
+    expect(detail.status).toBe('importing')
+    for (const candidate of [list[0], detail]) {
+      expect(candidate.importClaimToken).toBeUndefined()
+      expect(candidate.importSourceUpdatedAt).toBeUndefined()
+      expect(candidate.importClaimUntil).toBeUndefined()
+    }
   })
 
   it('validates edited candidate and marks it ready', async () => {
@@ -265,7 +286,7 @@ describe('candidate service', () => {
     const candidateId = await seedCandidate(db)
     await db.collection('questions').add({
       data: {
-        _id: `question_${candidateId}`,
+        _id: createQuestionId(candidateId, '2026-04-26T00:00:00.000Z'),
         ownerOpenid: 'user_a',
         materialId: 'material_1',
         candidateId,
@@ -288,7 +309,7 @@ describe('candidate service', () => {
     expect(result.importedCount).toBe(1)
     expect(result.skippedCount).toBe(0)
     expect(candidates.data[0]).toMatchObject({
-      importedQuestionId: `question_${candidateId}`,
+      importedQuestionId: createQuestionId(candidateId, '2026-04-26T00:00:00.000Z'),
       status: 'imported',
     })
     expect(questions.data).toHaveLength(1)
@@ -315,10 +336,76 @@ describe('candidate service', () => {
     expect(result.importedCount).toBe(1)
     expect(result.skippedCount).toBe(0)
     expect(candidates.data[0]).toMatchObject({
-      importedQuestionId: `question_${candidateId}`,
+      importedQuestionId: createQuestionId(candidateId, '2026-04-26T00:00:00.000Z'),
       status: 'imported',
     })
     expect(storedQuestions.data).toHaveLength(1)
+  })
+
+  it('recovers expired importing claim to imported when matching question exists', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db, {
+      status: 'importing',
+      importClaimToken: 'expired-token',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+      importClaimUntil: '2026-04-26T00:04:59.000Z',
+      updatedAt: '2026-04-26T00:00:10.000Z',
+    })
+    const questionId = createQuestionId(candidateId, '2026-04-26T00:00:00.000Z')
+    await db.collection('questions').add({
+      data: {
+        _id: questionId,
+        ownerOpenid: 'user_a',
+        materialId: 'material_1',
+        candidateId,
+        type: 'single',
+        stem: '题目',
+        options: [{ key: 'A', text: '甲' }, { key: 'B', text: '乙' }],
+        answerKeys: ['A'],
+        explanation: '',
+        sourcePageNo: null,
+        sourceCandidateUpdatedAt: '2026-04-26T00:00:00.000Z',
+        createdAt: '2026-04-26T00:00:09.000Z',
+        updatedAt: '2026-04-26T00:00:09.000Z',
+      },
+    })
+
+    const result = await confirmImport({ db, openid: 'user_a', materialId: 'material_1', now: '2026-04-26T00:05:00.000Z' })
+    const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+
+    expect(result.importedCount).toBe(1)
+    expect(candidate.data[0]).toMatchObject({
+      status: 'imported',
+      importedQuestionId: questionId,
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+      importClaimUntil: '',
+    })
+  })
+
+  it('recovers expired importing claim without a question and imports it in the same run', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db, {
+      status: 'importing',
+      importClaimToken: 'expired-token',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+      importClaimUntil: '2026-04-26T00:04:59.000Z',
+      updatedAt: '2026-04-26T00:00:10.000Z',
+    })
+
+    const result = await confirmImport({ db, openid: 'user_a', materialId: 'material_1', now: '2026-04-26T00:05:00.000Z' })
+    const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+    const questions = await db.collection('questions').where({ candidateId }).get()
+
+    expect(result.importedCount).toBe(1)
+    expect(candidate.data[0]).toMatchObject({
+      status: 'imported',
+      importedQuestionId: createQuestionId(candidateId, '2026-04-26T00:00:00.000Z'),
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+      importClaimUntil: '',
+    })
+    expect(questions.data).toHaveLength(1)
   })
 
   it('rolls back an import claim when question creation fails', async () => {
@@ -384,11 +471,71 @@ describe('candidate service', () => {
       importedQuestionId: '',
       importClaimToken: '',
       importSourceUpdatedAt: '',
+      importClaimUntil: '',
     })
     expect(questions.data).toHaveLength(1)
   })
 
-  it('does not relink an edited candidate to an orphaned question from an older version', async () => {
+  it('recovers after final imported mark throws and the claim later expires', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db)
+    const candidates = db.collection('parse_candidates')
+    const originalCollection = db.collection
+    const originalWhere = candidates.where
+    let blockImportedMarks = true
+    db.collection = (name) => (name === 'parse_candidates' ? candidates : originalCollection(name))
+    candidates.where = (query) => {
+      const base = originalWhere(query)
+      if (query && query._id === candidateId && query.status === 'importing' && query.importedQuestionId === '') {
+        return {
+          ...base,
+          async update({ data }) {
+            if (data.status === 'imported' && blockImportedMarks) {
+              const error = new Error('transient update failure')
+              error.code = 'transient_update_failure'
+              throw error
+            }
+            return base.update({ data })
+          },
+        }
+      }
+      return base
+    }
+
+    await expect(confirmImport({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      now: '2026-04-26T00:00:10.000Z',
+    })).rejects.toMatchObject({ code: 'transient_update_failure' })
+
+    const stuck = await db.collection('parse_candidates').doc(candidateId).get()
+    expect(stuck.data[0]).toMatchObject({
+      status: 'importing',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+      importClaimUntil: '2026-04-26T00:05:10.000Z',
+    })
+
+    blockImportedMarks = false
+    const recovered = await confirmImport({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      now: '2026-04-26T00:05:10.000Z',
+    })
+    const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+
+    expect(recovered.importedCount).toBe(1)
+    expect(candidate.data[0]).toMatchObject({
+      status: 'imported',
+      importedQuestionId: createQuestionId(candidateId, '2026-04-26T00:00:00.000Z'),
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+      importClaimUntil: '',
+    })
+  })
+
+  it('imports edited candidate as a new version when older-version orphan question exists', async () => {
     const db = createFakeDb()
     const candidateId = await seedCandidate(db, {
       stem: 'new stem',
@@ -396,7 +543,7 @@ describe('candidate service', () => {
     })
     await db.collection('questions').add({
       data: {
-        _id: `question_${candidateId}`,
+        _id: createQuestionId(candidateId, '2026-04-26T00:00:00.000Z'),
         ownerOpenid: 'user_a',
         materialId: 'material_1',
         candidateId,
@@ -412,20 +559,27 @@ describe('candidate service', () => {
       },
     })
 
-    await expect(confirmImport({
+    const result = await confirmImport({
       db,
       openid: 'user_a',
       materialId: 'material_1',
       now: '2026-04-26T00:00:30.000Z',
-    })).rejects.toMatchObject({ code: 'candidate_conflict' })
+    })
 
     const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+    const questions = await db.collection('questions').where({ candidateId }).get()
+    const newQuestionId = createQuestionId(candidateId, '2026-04-26T00:00:20.000Z')
+    expect(result.importedCount).toBe(1)
     expect(candidate.data[0]).toMatchObject({
-      status: 'ready',
-      importedQuestionId: '',
+      status: 'imported',
+      importedQuestionId: newQuestionId,
       importClaimToken: '',
       importSourceUpdatedAt: '',
-      updatedAt: '2026-04-26T00:00:30.000Z',
     })
+    expect(questions.data).toHaveLength(2)
+    expect(questions.data.map((question) => question._id).sort()).toEqual([
+      createQuestionId(candidateId, '2026-04-26T00:00:00.000Z'),
+      newQuestionId,
+    ].sort())
   })
 })
