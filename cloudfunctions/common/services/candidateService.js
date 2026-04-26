@@ -12,7 +12,7 @@ function redactCandidate(candidate) {
 }
 
 async function listCandidateRecords({ db, openid, materialId }) {
-  assertRequired(materialId, 'missing_material_id', 'missing material id')
+  assertRequired(materialId, 'missing_material_id', '缺少资料 ID')
 
   const result = await db.collection('parse_candidates').where({ ownerOpenid: openid, materialId }).get()
   return result.data
@@ -24,12 +24,12 @@ async function listCandidates({ db, openid, materialId }) {
 }
 
 async function getCandidateRecord({ db, openid, candidateId }) {
-  assertRequired(candidateId, 'missing_candidate_id', 'missing candidate id')
+  assertRequired(candidateId, 'missing_candidate_id', '缺少候选题 ID')
 
   const result = await db.collection('parse_candidates').where({ ownerOpenid: openid, _id: candidateId }).get()
   const candidate = result.data[0]
   if (!candidate) {
-    const error = new Error('candidate not found')
+    const error = new Error('候选题不存在')
     error.code = 'candidate_not_found'
     throw error
   }
@@ -41,17 +41,17 @@ async function getCandidateDetail({ db, openid, candidateId }) {
 }
 
 async function updateCandidate({ db, openid, candidateId, now, input = {} }) {
-  assertRequired(now, 'missing_timestamp', 'missing update timestamp')
+  assertRequired(now, 'missing_timestamp', '缺少更新时间')
 
   const existing = await getCandidateRecord({ db, openid, candidateId })
   if (existing.status === 'imported') {
-    const error = new Error('imported candidate cannot be edited')
+    const error = new Error('已导入题目不能编辑')
     error.code = 'candidate_imported'
     throw error
   }
 
   if (existing.status === 'importing') {
-    const error = new Error('candidate is importing')
+    const error = new Error('候选题正在导入，稍后再试')
     error.code = 'candidate_importing'
     throw error
   }
@@ -84,11 +84,11 @@ async function updateCandidate({ db, openid, candidateId, now, input = {} }) {
   if (updated.stats.updated !== 1) {
     const current = await getCandidateRecord({ db, openid, candidateId })
     if (current.status === 'imported') {
-      const error = new Error('imported candidate cannot be edited')
+      const error = new Error('已导入题目不能编辑')
       error.code = 'candidate_imported'
       throw error
     }
-    const error = new Error('candidate was changed, refresh and retry')
+    const error = new Error('候选题状态已变化，请刷新后重试')
     error.code = 'candidate_conflict'
     throw error
   }

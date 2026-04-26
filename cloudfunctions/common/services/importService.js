@@ -20,7 +20,7 @@ function createImportClaimUntil(now) {
 }
 
 function createCandidateConflict() {
-  const error = new Error('candidate import state conflict')
+  const error = new Error('候选题导入状态冲突，请刷新后重试')
   error.code = 'candidate_conflict'
   return error
 }
@@ -165,7 +165,7 @@ async function recoverStaleImportClaims({ db, openid, materialId, now }) {
 
   for (const candidate of candidates) {
     if (candidate.status !== 'importing') continue
-    if (!candidate.importClaimUntil || candidate.importClaimUntil > now) continue
+    if (candidate.importClaimUntil && candidate.importClaimUntil > now) continue
 
     const sourceCandidateUpdatedAt = candidate.importSourceUpdatedAt || candidate.updatedAt
     const question = await findMatchingQuestion({
@@ -262,8 +262,8 @@ async function importReadyCandidate({ db, openid, materialId, candidate, now }) 
 }
 
 async function confirmImport({ db, openid, materialId, now }) {
-  assertRequired(materialId, 'missing_material_id', 'missing material id')
-  assertRequired(now, 'missing_timestamp', 'missing import timestamp')
+  assertRequired(materialId, 'missing_material_id', '缺少资料 ID')
+  assertRequired(now, 'missing_timestamp', '缺少导入时间')
 
   const recovered = await recoverStaleImportClaims({ db, openid, materialId, now })
   const candidates = await listCandidateRecords({ db, openid, materialId })

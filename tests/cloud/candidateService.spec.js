@@ -87,6 +87,44 @@ describe('candidate service', () => {
     })).rejects.toMatchObject({ code: 'candidate_not_found' })
   })
 
+  it('returns localized messages with candidate edit errors', async () => {
+    const db = createFakeDb()
+    const importedId = await seedCandidate(db, { status: 'imported', importedQuestionId: 'question_1' })
+    const importingId = await seedCandidate(db, {
+      status: 'importing',
+      importClaimToken: 'claim_1',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+    })
+
+    await expect(updateCandidate({
+      db,
+      openid: 'user_a',
+      now: '2026-04-26T00:00:10.000Z',
+      input: { answerKeys: ['B'] },
+    })).rejects.toMatchObject({ code: 'missing_candidate_id', message: '缺少候选题 ID' })
+    await expect(updateCandidate({
+      db,
+      openid: 'user_b',
+      candidateId: importedId,
+      now: '2026-04-26T00:00:10.000Z',
+      input: { answerKeys: ['B'] },
+    })).rejects.toMatchObject({ code: 'candidate_not_found', message: '候选题不存在' })
+    await expect(updateCandidate({
+      db,
+      openid: 'user_a',
+      candidateId: importedId,
+      now: '2026-04-26T00:00:10.000Z',
+      input: { answerKeys: ['B'] },
+    })).rejects.toMatchObject({ code: 'candidate_imported', message: '已导入题目不能编辑' })
+    await expect(updateCandidate({
+      db,
+      openid: 'user_a',
+      candidateId: importingId,
+      now: '2026-04-26T00:00:10.000Z',
+      input: { answerKeys: ['B'] },
+    })).rejects.toMatchObject({ code: 'candidate_importing', message: '候选题正在导入，稍后再试' })
+  })
+
   it('blocks editing an already imported candidate', async () => {
     const db = createFakeDb()
     const candidateId = await seedCandidate(db, { status: 'imported', importedQuestionId: 'question_1' })
@@ -161,8 +199,8 @@ describe('candidate service', () => {
       input: { answerKeys: ['B'] },
     })).rejects.toMatchObject({ code: 'missing_candidate_id' })
 
-    await expect(listCandidates({ db, openid: 'user_a' })).rejects.toMatchObject({ code: 'missing_material_id' })
-    await expect(confirmImport({ db, openid: 'user_a', now: '2026-04-26T00:00:10.000Z' })).rejects.toMatchObject({ code: 'missing_material_id' })
+    await expect(listCandidates({ db, openid: 'user_a' })).rejects.toMatchObject({ code: 'missing_material_id', message: '缺少资料 ID' })
+    await expect(confirmImport({ db, openid: 'user_a', now: '2026-04-26T00:00:10.000Z' })).rejects.toMatchObject({ code: 'missing_material_id', message: '缺少资料 ID' })
   })
 
   it('does not let an edit read before import revert an imported candidate', async () => {
@@ -406,6 +444,70 @@ describe('candidate service', () => {
       importClaimUntil: '',
     })
     expect(questions.data).toHaveLength(1)
+  })
+
+  it('recovers legacy importing claim without an expiry and imports it in the same run', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db, {
+      status: 'importing',
+      importClaimToken: 'legacy-token',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+      updatedAt: '2026-04-26T00:00:10.000Z',
+    })
+
+    const result = await confirmImport({ db, openid: 'user_a', materialId: 'material_1', now: '2026-04-26T00:05:00.000Z' })
+    const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+    const questions = await db.collection('questions').where({ candidateId }).get()
+
+    expect(result.importedCount).toBe(1)
+    expect(candidate.data[0]).toMatchObject({
+      status: 'imported',
+      importedQuestionId: createQuestionId(candidateId, '2026-04-26T00:00:00.000Z'),
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+      importClaimUntil: '',
+    })
+    expect(questions.data).toHaveLength(1)
+  })
+
+  it('recovers legacy importing claim without an expiry to imported when matching question exists', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db, {
+      status: 'importing',
+      importClaimToken: 'legacy-token',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+      updatedAt: '2026-04-26T00:00:10.000Z',
+    })
+    const questionId = createQuestionId(candidateId, '2026-04-26T00:00:00.000Z')
+    await db.collection('questions').add({
+      data: {
+        _id: questionId,
+        ownerOpenid: 'user_a',
+        materialId: 'material_1',
+        candidateId,
+        type: 'single',
+        stem: '题目',
+        options: [{ key: 'A', text: '甲' }, { key: 'B', text: '乙' }],
+        answerKeys: ['A'],
+        explanation: '',
+        sourcePageNo: null,
+        sourceCandidateUpdatedAt: '2026-04-26T00:00:00.000Z',
+        createdAt: '2026-04-26T00:00:09.000Z',
+        updatedAt: '2026-04-26T00:00:09.000Z',
+      },
+    })
+
+    const result = await confirmImport({ db, openid: 'user_a', materialId: 'material_1', now: '2026-04-26T00:05:00.000Z' })
+    const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+
+    expect(result.importedCount).toBe(1)
+    expect(candidate.data[0]).toMatchObject({
+      status: 'imported',
+      importedQuestionId: questionId,
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+      importClaimUntil: '',
+    })
   })
 
   it('rolls back an import claim when question creation fails', async () => {
