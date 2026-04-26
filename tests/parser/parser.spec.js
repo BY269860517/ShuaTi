@@ -115,6 +115,30 @@ describe('parseQuestions inline_answer', () => {
     expect(result[0].status).toBe('ready')
   })
 
+  it('does not split figure labels in the stem as inline options', () => {
+    const result = parseQuestions({
+      mode: 'inline_answer',
+      text: '1. 请根据图A.1判断\nA. 甲\nB. 乙\n答案：A',
+    })
+
+    expect(result[0].stem).toBe('请根据图A.1判断')
+    expect(result[0].options).toEqual([
+      { key: 'A', text: '甲' },
+      { key: 'B', text: '乙' },
+    ])
+    expect(result[0].status).toBe('ready')
+  })
+
+  it('marks duplicate option keys as need_review', () => {
+    const result = parseQuestions({
+      mode: 'inline_answer',
+      text: '1. 重复选项\nA. 甲\nA. 乙\n答案：A',
+    })
+
+    expect(result[0].status).toBe('need_review')
+    expect(result[0].validationErrors).toContain('duplicate_options')
+  })
+
   it('keeps invalid answer references for validation', () => {
     const result = parseQuestions({
       mode: 'inline_answer',

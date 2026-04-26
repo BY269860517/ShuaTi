@@ -55,19 +55,20 @@ function stripAnswerAndExplanation(block) {
 }
 
 function splitInlineOptions(line) {
-  const optionMarker = /(\(?[A-Ha-h]\)?\s*(?:[.、．):：])\s*)/g
+  const optionMarker = /(^|\s)(\(?[A-Ha-h]\)?\s*(?:[.、．):：])\s*)/g
   const parts = []
   let lastIndex = 0
   let match = optionMarker.exec(line)
 
   while (match) {
-    if (match.index > lastIndex) {
-      parts.push(line.slice(lastIndex, match.index).trim())
+    const markerStart = match.index + match[1].length
+    if (markerStart > lastIndex) {
+      parts.push(line.slice(lastIndex, markerStart).trim())
     }
     const nextIndex = optionMarker.lastIndex
     const nextMatch = optionMarker.exec(line)
-    const optionTextEnd = nextMatch ? nextMatch.index : line.length
-    parts.push(`${match[1]}${line.slice(nextIndex, optionTextEnd).trim()}`.trim())
+    const optionTextEnd = nextMatch ? nextMatch.index + nextMatch[1].length : line.length
+    parts.push(`${match[2]}${line.slice(nextIndex, optionTextEnd).trim()}`.trim())
     lastIndex = optionTextEnd
     match = nextMatch
   }
