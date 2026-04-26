@@ -8,6 +8,8 @@
 
 **Tech Stack:** uni-app + Vue 3 + TypeScript for the mini program, WeChat CloudBase / wx-server-sdk for cloud functions, Node.js CommonJS for cloud services, Vitest for parser and service unit tests, Bun from `F:\.bun` for package installation.
 
+**Task 2 module-system correction:** Keep the root project package type as ESM for the uni-app/Vite toolchain, and add `cloudfunctions/package.json` with `"type": "commonjs"` so `cloudfunctions/**/*.js` can use `require()` and `module.exports` directly. Parser specs should require the CommonJS parser module, but use Vitest globals (`describe`, `it`, `expect`) from `vitest.config.ts`; Vitest 1.6.1 cannot be loaded with `require('vitest')`.
+
 ---
 
 ## Current State
