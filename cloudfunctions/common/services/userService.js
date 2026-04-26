@@ -7,7 +7,7 @@ async function upsertUser({ db, openid, now }) {
     return { ...existing.data[0], updatedAt: now, created: false }
   }
 
-  const data = { openid, createdAt: now, updatedAt: now }
+  const data = { _id: openid, openid, createdAt: now, updatedAt: now }
   const created = await users.add({ data })
   return { _id: created._id, ...data, created: true }
 }

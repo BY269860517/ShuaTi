@@ -46,15 +46,19 @@ async function createMaterial({ db, openid, now, input }) {
 }
 
 async function listMaterials({ db, openid }) {
-  const result = await db.collection('materials').where({ ownerOpenid: openid }).get()
+  const result = await db.collection('materials').where({ ownerOpenid: openid }).orderBy('createdAt', 'desc').get()
   return result.data.map(summarizeMaterial)
 }
 
 async function getMaterialDetail({ db, openid, materialId }) {
+  assertRequired(materialId, 'missing_material_id', '缺少资料 ID')
+
   const result = await db.collection('materials').where({ _id: materialId, ownerOpenid: openid }).get()
   const material = result.data[0]
   if (!material) {
-    throw new Error('资料不存在')
+    const error = new Error('资料不存在')
+    error.code = 'material_not_found'
+    throw error
   }
   return summarizeMaterial(material)
 }

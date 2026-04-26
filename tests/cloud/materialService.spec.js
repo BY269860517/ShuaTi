@@ -7,8 +7,21 @@ describe('material services', () => {
     const db = createFakeDb()
     const result = await upsertUser({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z' })
 
+    expect(result._id).toBe('user_a')
     expect(result.openid).toBe('user_a')
     expect(result.created).toBe(true)
+  })
+
+  it('updates existing user login timestamp', async () => {
+    const db = createFakeDb()
+    await upsertUser({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z' })
+
+    const result = await upsertUser({ db, openid: 'user_a', now: '2026-04-27T00:00:00.000Z' })
+
+    expect(result._id).toBe('user_a')
+    expect(result.created).toBe(false)
+    expect(result.createdAt).toBe('2026-04-26T00:00:00.000Z')
+    expect(result.updatedAt).toBe('2026-04-27T00:00:00.000Z')
   })
 
   it('creates material with owner from server openid', async () => {
@@ -31,6 +44,49 @@ describe('material services', () => {
     expect(material.parseMode).toBe('inline_answer')
   })
 
+  it('defaults invalid parse mode to inline answer', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-04-26T00:00:00.000Z',
+      input: {
+        fileID: 'cloud://env/materials/user_a/demo.pdf',
+        fileName: 'demo.pdf',
+        fileSize: 1024,
+        parseMode: 'forged_mode',
+      },
+    })
+
+    expect(material.parseMode).toBe('inline_answer')
+  })
+
+  it('requires file id when creating material', async () => {
+    const db = createFakeDb()
+
+    await expect(createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-04-26T00:00:00.000Z',
+      input: { fileName: 'demo.pdf', fileSize: 1024, parseMode: 'inline_answer' },
+    })).rejects.toMatchObject({
+      code: 'missing_file_id',
+    })
+  })
+
+  it('requires file name when creating material', async () => {
+    const db = createFakeDb()
+
+    await expect(createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-04-26T00:00:00.000Z',
+      input: { fileID: 'cloud://env/materials/user_a/demo.pdf', fileSize: 1024, parseMode: 'inline_answer' },
+    })).rejects.toMatchObject({
+      code: 'missing_file_name',
+    })
+  })
+
   it('lists only current user materials', async () => {
     const db = createFakeDb()
     await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'a', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
@@ -42,10 +98,48 @@ describe('material services', () => {
     expect(result[0].ownerOpenid).toBe('user_a')
   })
 
+  it('lists current user materials newest first', async () => {
+    const db = createFakeDb()
+    await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'old', fileName: 'old.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    await createMaterial({ db, openid: 'user_a', now: '2026-04-27T00:00:00.000Z', input: { fileID: 'new', fileName: 'new.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+
+    const result = await listMaterials({ db, openid: 'user_a' })
+
+    expect(result.map((material) => material.fileName)).toEqual(['new.pdf', 'old.pdf'])
+  })
+
+  it('returns detail for the material owner', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'a', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+
+    const detail = await getMaterialDetail({ db, openid: 'user_a', materialId: material._id })
+
+    expect(detail).toMatchObject({
+      _id: material._id,
+      ownerOpenid: 'user_a',
+      fileName: 'a.pdf',
+    })
+  })
+
   it('blocks detail access for other users', async () => {
     const db = createFakeDb()
     const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'a', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
 
-    await expect(getMaterialDetail({ db, openid: 'user_b', materialId: material._id })).rejects.toThrow('资料不存在')
+    try {
+      await getMaterialDetail({ db, openid: 'user_b', materialId: material._id })
+      throw new Error('expected getMaterialDetail to reject')
+    } catch (error) {
+      expect(error.code).toBe('material_not_found')
+      expect(error.message).toBe('资料不存在')
+    }
+  })
+
+  it('requires material id when getting detail', async () => {
+    const db = createFakeDb()
+
+    await expect(getMaterialDetail({ db, openid: 'user_a' })).rejects.toMatchObject({
+      code: 'missing_material_id',
+      message: '缺少资料 ID',
+    })
   })
 })
