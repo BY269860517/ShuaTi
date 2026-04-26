@@ -16,6 +16,14 @@ describe('pdf import frontend pages', () => {
     expect(paths).toContain('pages/import/review')
     expect(paths).toContain('pages/import/edit')
     expect(paths).toContain('pages/practice/setup')
+    expect(paths).toContain('pages/practice/do')
+    expect(paths).toContain('pages/practice/result')
+  })
+
+  test('practice route page files exist', () => {
+    expect(existsSync('pages/practice/setup.vue')).toBe(true)
+    expect(existsSync('pages/practice/do.vue')).toBe(true)
+    expect(existsSync('pages/practice/result.vue')).toBe(true)
   })
 
   test('home page logs in, loads materials, and navigates to upload/detail', () => {
@@ -134,5 +142,52 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain("type.value !== 'multiple' && normalizedAnswers.length > 1")
     expect(source).toContain('options: normalizedOptions')
     expect(source).toContain('answerKeys: normalizedAnswers')
+  })
+
+  test('practice setup loads question count, offers fixed counts, and creates sessions', () => {
+    const source = read('pages/practice/setup.vue')
+
+    expect(source).toContain('onLoad')
+    expect(source).toContain('materialId.value = String(options?.materialId ||')
+    expect(source).toContain('api.questionList(materialId.value || undefined)')
+    expect(source).toContain('api.practiceCreate({ materialId: materialId.value || undefined, count: selectedCount.value })')
+    expect(source).toContain('countOptions = [5, 10, 20]')
+    expect(source).toContain('/pages/practice/do?sessionId=')
+    expect(source).toContain('LoadingState')
+    expect(source).toContain('ErrorState')
+    expect(source).toContain('EmptyState')
+  })
+
+  test('practice do page loads safe questions, submits answers, and stores grading results', () => {
+    const source = read('pages/practice/do.vue')
+    const submitIndex = source.indexOf('api.answerSubmit')
+    const answerKeysIndex = source.indexOf('gradingResult.answerKeys')
+
+    expect(source).toContain('sessionId.value = String(options?.sessionId ||')
+    expect(source).toContain('api.practiceDetail(sessionId.value)')
+    expect(source).toContain('QuestionCard')
+    expect(source).toContain('Record<string, AnswerSubmitResult>')
+    expect(source).toContain('selectedByQuestionId.value[questionId] = keys')
+    expect(source).toContain('api.answerSubmit({ sessionId: sessionId.value, questionId, selectedKeys })')
+    expect(source).toContain('gradingResults.value[questionId] = result')
+    expect(source).toContain('/pages/practice/result?sessionId=')
+    expect(source).toContain('submitting.value || Boolean(currentGradingResult.value)')
+    expect(source).not.toContain('question.answerKeys')
+    expect(submitIndex).toBeGreaterThan(-1)
+    expect(answerKeysIndex).toBeGreaterThan(submitIndex)
+  })
+
+  test('practice result page loads detail, shows score, and links home or retry setup', () => {
+    const source = read('pages/practice/result.vue')
+
+    expect(source).toContain('sessionId.value = String(options?.sessionId ||')
+    expect(source).toContain('api.practiceDetail(sessionId.value)')
+    expect(source).toContain('session.value.correctCount')
+    expect(source).toContain('session.value.totalCount')
+    expect(source).toContain('/pages/index/index')
+    expect(source).toContain('/pages/practice/setup?materialId=')
+    expect(source).toContain('/pages/practice/setup')
+    expect(source).toContain('LoadingState')
+    expect(source).toContain('ErrorState')
   })
 })
