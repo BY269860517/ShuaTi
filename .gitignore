@@ -1,0 +1,12 @@
+node_modules/
+unpackage/
+dist/
+.hbuilderx/
+.DS_Store
+*.log
+*.local
+.env
+.env.*
+coverage/
+.gstack/
+.worktrees/
