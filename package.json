@@ -1,0 +1,27 @@
+{
+  "name": "shuati",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:parser": "vitest run tests/parser",
+    "test:cloud": "vitest run tests/cloud"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "latest",
+    "@dcloudio/uni-components": "latest",
+    "@dcloudio/uni-mp-weixin": "latest",
+    "vue": "latest"
+  },
+  "devDependencies": {
+    "@dcloudio/vite-plugin-uni": "latest",
+    "@vue/compiler-sfc": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}

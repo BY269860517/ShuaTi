@@ -1,0 +1,18 @@
+{
+  "name": "刷题导入",
+  "appid": "",
+  "description": "PDF 原题导入刷题小程序 MVP",
+  "versionName": "0.1.0",
+  "versionCode": "1",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "postcss": true,
+      "minified": true
+    },
+    "usingComponents": true
+  }
+}
