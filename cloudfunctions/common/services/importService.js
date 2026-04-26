@@ -5,6 +5,16 @@ function createQuestionId(candidateId) {
   return `question_${candidateId}`
 }
 
+function createImportClaimToken(candidate, now) {
+  return `import_${candidate._id}_${candidate.updatedAt}_${now}`
+}
+
+function createCandidateConflict() {
+  const error = new Error('候选题导入状态冲突，请刷新后重试')
+  error.code = 'candidate_conflict'
+  return error
+}
+
 async function claimCandidateForImport({ db, openid, materialId, candidate, now }) {
   return db.collection('parse_candidates').where({
     _id: candidate._id,
@@ -16,39 +26,66 @@ async function claimCandidateForImport({ db, openid, materialId, candidate, now 
   }).update({
     data: {
       status: 'importing',
+      importClaimToken: createImportClaimToken(candidate, now),
+      importSourceUpdatedAt: candidate.updatedAt,
       updatedAt: now,
     },
   })
 }
 
-async function markClaimedCandidateImported({ db, openid, materialId, candidateId, questionId, now }) {
+async function markClaimedCandidateImported({ db, openid, materialId, candidate, questionId, importClaimToken, now }) {
   return db.collection('parse_candidates').where({
-    _id: candidateId,
+    _id: candidate._id,
     ownerOpenid: openid,
     materialId,
     status: 'importing',
     importedQuestionId: '',
+    importClaimToken,
+    importSourceUpdatedAt: candidate.updatedAt,
     updatedAt: now,
   }).update({
     data: {
       importedQuestionId: questionId,
       status: 'imported',
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
       updatedAt: now,
     },
   })
 }
 
-async function recoverDuplicateQuestion({ db, openid, materialId, candidateId, now }) {
-  const questionId = createQuestionId(candidateId)
+async function rollbackImportClaim({ db, openid, materialId, candidate, importClaimToken, now }) {
+  return db.collection('parse_candidates').where({
+    _id: candidate._id,
+    ownerOpenid: openid,
+    materialId,
+    status: 'importing',
+    importedQuestionId: '',
+    importClaimToken,
+    importSourceUpdatedAt: candidate.updatedAt,
+    updatedAt: now,
+  }).update({
+    data: {
+      status: 'ready',
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+      updatedAt: now,
+    },
+  })
+}
+
+async function recoverDuplicateQuestion({ db, openid, materialId, candidate, importClaimToken, now }) {
+  const questionId = createQuestionId(candidate._id)
   const existing = await db.collection('questions').where({
     _id: questionId,
     ownerOpenid: openid,
     materialId,
-    candidateId,
+    candidateId: candidate._id,
+    sourceCandidateUpdatedAt: candidate.updatedAt,
   }).get()
   if (!existing.data[0]) return false
 
-  const linked = await markClaimedCandidateImported({ db, openid, materialId, candidateId, questionId, now })
+  const linked = await markClaimedCandidateImported({ db, openid, materialId, candidate, questionId, importClaimToken, now })
   return linked.stats.updated === 1
 }
 
@@ -61,6 +98,7 @@ async function confirmImport({ db, openid, materialId, now }) {
   let importedCount = 0
 
   for (const candidate of ready) {
+    const importClaimToken = createImportClaimToken(candidate, now)
     const claimed = await claimCandidateForImport({ db, openid, materialId, candidate, now })
     if (claimed.stats.updated !== 1) continue
 
@@ -76,6 +114,8 @@ async function confirmImport({ db, openid, materialId, now }) {
       answerKeys: candidate.answerKeys,
       explanation: candidate.explanation || '',
       sourcePageNo: candidate.sourcePageNo || null,
+      sourceCandidateUpdatedAt: candidate.updatedAt,
+      importClaimToken,
       createdAt: now,
       updatedAt: now,
     }
@@ -83,17 +123,23 @@ async function confirmImport({ db, openid, materialId, now }) {
     try {
       await db.collection('questions').add({ data: questionData })
     } catch (error) {
-      if (error.code !== 'duplicate_key') throw error
-      const recovered = await recoverDuplicateQuestion({ db, openid, materialId, candidateId: candidate._id, now })
-      if (recovered) continue
-      throw error
+      if (error.code !== 'duplicate_key') {
+        await rollbackImportClaim({ db, openid, materialId, candidate, importClaimToken, now })
+        throw error
+      }
+      const recovered = await recoverDuplicateQuestion({ db, openid, materialId, candidate, importClaimToken, now })
+      if (recovered) {
+        importedCount += 1
+        continue
+      }
+      await rollbackImportClaim({ db, openid, materialId, candidate, importClaimToken, now })
+      throw createCandidateConflict()
     }
 
-    const imported = await markClaimedCandidateImported({ db, openid, materialId, candidateId: candidate._id, questionId, now })
+    const imported = await markClaimedCandidateImported({ db, openid, materialId, candidate, questionId, importClaimToken, now })
     if (imported.stats.updated !== 1) {
-      const error = new Error('候选题导入状态冲突，请刷新后重试')
-      error.code = 'candidate_conflict'
-      throw error
+      await rollbackImportClaim({ db, openid, materialId, candidate, importClaimToken, now })
+      throw createCandidateConflict()
     }
     importedCount += 1
   }

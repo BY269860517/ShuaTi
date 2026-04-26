@@ -79,6 +79,23 @@ describe('candidate service', () => {
     })).rejects.toMatchObject({ code: 'candidate_imported' })
   })
 
+  it('blocks editing a candidate while it is importing', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db, {
+      status: 'importing',
+      importClaimToken: 'claim_1',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+    })
+
+    await expect(updateCandidate({
+      db,
+      openid: 'user_a',
+      candidateId,
+      now: '2026-04-26T00:00:10.000Z',
+      input: { answerKeys: ['B'] },
+    })).rejects.toMatchObject({ code: 'candidate_importing' })
+  })
+
   it('validates intentionally cleared answers', async () => {
     const db = createFakeDb()
     const candidateId = await seedCandidate(db)
@@ -258,6 +275,7 @@ describe('candidate service', () => {
         answerKeys: ['A'],
         explanation: '',
         sourcePageNo: null,
+        sourceCandidateUpdatedAt: '2026-04-26T00:00:00.000Z',
         createdAt: '2026-04-26T00:00:09.000Z',
         updatedAt: '2026-04-26T00:00:09.000Z',
       },
@@ -267,8 +285,8 @@ describe('candidate service', () => {
     const candidates = await db.collection('parse_candidates').where({ ownerOpenid: 'user_a', materialId: 'material_1' }).get()
     const questions = await db.collection('questions').where({ ownerOpenid: 'user_a', materialId: 'material_1' }).get()
 
-    expect(result.importedCount).toBe(0)
-    expect(result.skippedCount).toBe(1)
+    expect(result.importedCount).toBe(1)
+    expect(result.skippedCount).toBe(0)
     expect(candidates.data[0]).toMatchObject({
       importedQuestionId: `question_${candidateId}`,
       status: 'imported',
@@ -294,12 +312,120 @@ describe('candidate service', () => {
     const candidates = await db.collection('parse_candidates').where({ ownerOpenid: 'user_a', materialId: 'material_1' }).get()
     const storedQuestions = await questions.where({ candidateId }).get()
 
-    expect(result.importedCount).toBe(0)
-    expect(result.skippedCount).toBe(1)
+    expect(result.importedCount).toBe(1)
+    expect(result.skippedCount).toBe(0)
     expect(candidates.data[0]).toMatchObject({
       importedQuestionId: `question_${candidateId}`,
       status: 'imported',
     })
     expect(storedQuestions.data).toHaveLength(1)
+  })
+
+  it('rolls back an import claim when question creation fails', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db)
+    const questions = db.collection('questions')
+    const originalCollection = db.collection
+    db.collection = (name) => (name === 'questions' ? questions : originalCollection(name))
+    questions.add = async () => {
+      const error = new Error('database unavailable')
+      error.code = 'db_unavailable'
+      throw error
+    }
+
+    await expect(confirmImport({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      now: '2026-04-26T00:00:10.000Z',
+    })).rejects.toMatchObject({ code: 'db_unavailable' })
+
+    const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+    expect(candidate.data[0]).toMatchObject({
+      status: 'ready',
+      importedQuestionId: '',
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+    })
+  })
+
+  it('rolls back an import claim when final imported mark conflicts', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db)
+    const candidates = db.collection('parse_candidates')
+    const originalCollection = db.collection
+    const originalWhere = candidates.where
+    db.collection = (name) => (name === 'parse_candidates' ? candidates : originalCollection(name))
+    candidates.where = (query) => {
+      const base = originalWhere(query)
+      if (query && query._id === candidateId && query.status === 'importing' && query.importedQuestionId === '') {
+        return {
+          ...base,
+          async update({ data }) {
+            if (data.status === 'imported') return { stats: { updated: 0 } }
+            return base.update({ data })
+          },
+        }
+      }
+      return base
+    }
+
+    await expect(confirmImport({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      now: '2026-04-26T00:00:10.000Z',
+    })).rejects.toMatchObject({ code: 'candidate_conflict' })
+
+    const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+    const questions = await db.collection('questions').where({ candidateId }).get()
+    expect(candidate.data[0]).toMatchObject({
+      status: 'ready',
+      importedQuestionId: '',
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+    })
+    expect(questions.data).toHaveLength(1)
+  })
+
+  it('does not relink an edited candidate to an orphaned question from an older version', async () => {
+    const db = createFakeDb()
+    const candidateId = await seedCandidate(db, {
+      stem: 'new stem',
+      updatedAt: '2026-04-26T00:00:20.000Z',
+    })
+    await db.collection('questions').add({
+      data: {
+        _id: `question_${candidateId}`,
+        ownerOpenid: 'user_a',
+        materialId: 'material_1',
+        candidateId,
+        type: 'single',
+        stem: 'old stem',
+        options: [{ key: 'A', text: 'old' }],
+        answerKeys: ['A'],
+        explanation: '',
+        sourcePageNo: null,
+        sourceCandidateUpdatedAt: '2026-04-26T00:00:00.000Z',
+        createdAt: '2026-04-26T00:00:09.000Z',
+        updatedAt: '2026-04-26T00:00:09.000Z',
+      },
+    })
+
+    await expect(confirmImport({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      now: '2026-04-26T00:00:30.000Z',
+    })).rejects.toMatchObject({ code: 'candidate_conflict' })
+
+    const candidate = await db.collection('parse_candidates').doc(candidateId).get()
+    expect(candidate.data[0]).toMatchObject({
+      status: 'ready',
+      importedQuestionId: '',
+      importClaimToken: '',
+      importSourceUpdatedAt: '',
+      updatedAt: '2026-04-26T00:00:30.000Z',
+    })
   })
 })

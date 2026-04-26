@@ -31,6 +31,12 @@ async function updateCandidate({ db, openid, candidateId, now, input = {} }) {
     throw error
   }
 
+  if (existing.status === 'importing') {
+    const error = new Error('候选题正在导入，不能编辑')
+    error.code = 'candidate_importing'
+    throw error
+  }
+
   const merged = validateCandidate({
     ...existing,
     type: input.type || existing.type,
