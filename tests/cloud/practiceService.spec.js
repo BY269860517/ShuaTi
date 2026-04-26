@@ -35,9 +35,10 @@ describe('practice service', () => {
 
     expect(questions).toHaveLength(1)
     expect(questions[0].answerKeys).toBeUndefined()
+    expect(questions[0].explanation).toBeUndefined()
   })
 
-  it('creates practice session and hides answers in detail', async () => {
+  it('creates practice session and hides answers and explanations in detail', async () => {
     const db = createFakeDb()
     await seedQuestion(db)
     const session = await createPractice({
@@ -51,6 +52,7 @@ describe('practice service', () => {
 
     expect(detail.questions).toHaveLength(1)
     expect(detail.questions[0].answerKeys).toBeUndefined()
+    expect(detail.questions[0].explanation).toBeUndefined()
   })
 
   it('grades answer on backend and stores attempt', async () => {
@@ -112,6 +114,87 @@ describe('practice service', () => {
     expect(attempts.data).toHaveLength(1)
     expect(attempts.data[0]).toMatchObject({ selectedKeys: ['A'], isCorrect: true })
     expect(updatedSession.data[0].correctCount).toBe(1)
+  })
+
+  it('keeps one attempt when the same answer is submitted concurrently', async () => {
+    const db = createFakeDb()
+    await seedQuestion(db)
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      count: 5,
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    await Promise.all([
+      answerSubmit({
+        db,
+        openid: 'user_a',
+        sessionId: session._id,
+        questionId: session.questionIds[0],
+        selectedKeys: ['A'],
+        now: '2026-04-26T00:00:02.000Z',
+      }),
+      answerSubmit({
+        db,
+        openid: 'user_a',
+        sessionId: session._id,
+        questionId: session.questionIds[0],
+        selectedKeys: ['A'],
+        now: '2026-04-26T00:00:02.000Z',
+      }),
+    ])
+
+    const attempts = await db.collection('attempts').where({ ownerOpenid: 'user_a', sessionId: session._id }).get()
+    const updatedSession = await db.collection('practice_sessions').doc(session._id).get()
+    expect(attempts.data).toHaveLength(1)
+    expect(updatedSession.data[0].correctCount).toBe(1)
+  })
+
+  it('preserves submittedAt after a completed practice is edited', async () => {
+    const db = createFakeDb()
+    await seedQuestion(db, { candidateId: 'candidate_1', answerKeys: ['A'] })
+    await seedQuestion(db, { candidateId: 'candidate_2', stem: '题目 2', answerKeys: ['B'] })
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      count: 5,
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    await answerSubmit({
+      db,
+      openid: 'user_a',
+      sessionId: session._id,
+      questionId: session.questionIds[0],
+      selectedKeys: ['A'],
+      now: '2026-04-26T00:00:02.000Z',
+    })
+    await answerSubmit({
+      db,
+      openid: 'user_a',
+      sessionId: session._id,
+      questionId: session.questionIds[1],
+      selectedKeys: ['B'],
+      now: '2026-04-26T00:00:03.000Z',
+    })
+    await answerSubmit({
+      db,
+      openid: 'user_a',
+      sessionId: session._id,
+      questionId: session.questionIds[0],
+      selectedKeys: ['B'],
+      now: '2026-04-26T00:00:04.000Z',
+    })
+
+    const updatedSession = await db.collection('practice_sessions').doc(session._id).get()
+    expect(updatedSession.data[0]).toMatchObject({
+      correctCount: 1,
+      status: 'submitted',
+      submittedAt: '2026-04-26T00:00:03.000Z',
+    })
   })
 
   it('returns coded localized errors for invalid practice operations', async () => {

@@ -7,7 +7,7 @@ function createError(code, message) {
 }
 
 function hideAnswer(question) {
-  const { answerKeys, ...safeQuestion } = question
+  const { answerKeys, explanation, ...safeQuestion } = question
   return safeQuestion
 }
 
@@ -21,6 +21,10 @@ function sameKeys(a, b) {
 
 function questionQuery(openid, materialId) {
   return materialId ? { ownerOpenid: openid, materialId } : { ownerOpenid: openid }
+}
+
+function createAttemptId(sessionId, questionId) {
+  return `attempt_${sessionId}_${questionId}`
 }
 
 async function listQuestions({ db, openid, materialId }) {
@@ -74,9 +78,20 @@ async function getPracticeDetail({ db, openid, sessionId }) {
 
 async function upsertAttempt({ db, openid, sessionId, questionId, selectedKeys, isCorrect, now }) {
   const attempts = db.collection('attempts')
-  const existing = await attempts.where({ ownerOpenid: openid, sessionId, questionId }).get()
+  const attemptId = createAttemptId(sessionId, questionId)
+  const data = {
+    _id: attemptId,
+    ownerOpenid: openid,
+    sessionId,
+    questionId,
+    selectedKeys,
+    isCorrect,
+    createdAt: now,
+    updatedAt: now,
+  }
+  const existing = await attempts.where({ _id: attemptId, ownerOpenid: openid }).get()
   if (existing.data[0]) {
-    await attempts.where({ _id: existing.data[0]._id, ownerOpenid: openid }).update({
+    await attempts.where({ _id: attemptId, ownerOpenid: openid }).update({
       data: {
         selectedKeys,
         isCorrect,
@@ -86,17 +101,20 @@ async function upsertAttempt({ db, openid, sessionId, questionId, selectedKeys, 
     return { ...existing.data[0], selectedKeys, isCorrect, updatedAt: now }
   }
 
-  const data = {
-    ownerOpenid: openid,
-    sessionId,
-    questionId,
-    selectedKeys,
-    isCorrect,
-    createdAt: now,
-    updatedAt: now,
+  try {
+    const created = await attempts.add({ data })
+    return { ...data, _id: created._id }
+  } catch (error) {
+    if (error.code !== 'duplicate_key') throw error
+    await attempts.where({ _id: attemptId, ownerOpenid: openid }).update({
+      data: {
+        selectedKeys,
+        isCorrect,
+        updatedAt: now,
+      },
+    })
+    return data
   }
-  const created = await attempts.add({ data })
-  return { _id: created._id, ...data }
 }
 
 async function answerSubmit({ db, openid, sessionId, questionId, selectedKeys, now }) {
@@ -125,11 +143,12 @@ async function answerSubmit({ db, openid, sessionId, questionId, selectedKeys, n
   const attempts = await db.collection('attempts').where({ ownerOpenid: openid, sessionId }).get()
   const correctCount = attempts.data.filter((attempt) => attempt.isCorrect).length
   const submitted = attempts.data.length >= session.totalCount
+  const submittedAt = submitted ? (session.submittedAt || now) : ''
   await db.collection('practice_sessions').doc(sessionId).update({
     data: {
       correctCount,
       status: submitted ? 'submitted' : 'active',
-      submittedAt: submitted ? now : '',
+      submittedAt,
       updatedAt: now,
     },
   })
