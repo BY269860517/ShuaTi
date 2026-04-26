@@ -1,6 +1,8 @@
 const { parseQuestions } = require('../parser')
 const { assertRequired } = require('../response')
-const { getMaterialDetail } = require('./materialService')
+const { getMaterialDetail, getMaterialForOwner } = require('./materialService')
+
+const ACTIVE_JOB_STATUSES = new Set(['pending', 'running', 'done'])
 
 function countStatuses(candidates) {
   return {
@@ -10,10 +12,32 @@ function countStatuses(candidates) {
   }
 }
 
+function getJobTimestamp(job) {
+  return job.updatedAt || job.createdAt || ''
+}
+
+function sortNewestJobs(jobs) {
+  return [...jobs].sort((left, right) => {
+    const leftTime = getJobTimestamp(left)
+    const rightTime = getJobTimestamp(right)
+    if (leftTime !== rightTime) return leftTime > rightTime ? -1 : 1
+    return String(left._id || '') > String(right._id || '') ? -1 : 1
+  })
+}
+
+function selectActiveJob(jobs) {
+  return sortNewestJobs(jobs).find((job) => ACTIVE_JOB_STATUSES.has(job.status)) || null
+}
+
+function selectStatusJob(jobs) {
+  const sorted = sortNewestJobs(jobs)
+  return sorted.find((job) => ACTIVE_JOB_STATUSES.has(job.status)) || sorted[0] || null
+}
+
 async function startParse({ db, openid, materialId, now }) {
   const material = await getMaterialDetail({ db, openid, materialId })
   const existing = await db.collection('parse_jobs').where({ materialId, ownerOpenid: openid }).get()
-  const active = existing.data.find((job) => ['pending', 'running', 'done'].includes(job.status))
+  const active = selectActiveJob(existing.data)
   if (active) return active
 
   const data = {
@@ -64,7 +88,7 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
   })
 
   try {
-    const material = await getMaterialDetail({ db, openid, materialId: job.materialId })
+    const material = await getMaterialForOwner({ db, openid, materialId: job.materialId })
     const text = await extractText(material)
     if (!text || !text.trim()) throw new Error('PDF 无可解析文本')
 
@@ -130,7 +154,7 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
 async function getParseStatus({ db, openid, materialId }) {
   const material = await getMaterialDetail({ db, openid, materialId })
   const jobs = await db.collection('parse_jobs').where({ materialId, ownerOpenid: openid }).get()
-  return { material, job: jobs.data[0] || null }
+  return { material, job: selectStatusJob(jobs.data) }
 }
 
 module.exports = {

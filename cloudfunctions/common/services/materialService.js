@@ -50,6 +50,19 @@ async function listMaterials({ db, openid }) {
   return result.data.map(summarizeMaterial)
 }
 
+async function getMaterialForOwner({ db, openid, materialId }) {
+  assertRequired(materialId, 'missing_material_id', '缺少资料 ID')
+
+  const result = await db.collection('materials').where({ _id: materialId, ownerOpenid: openid }).get()
+  const material = result.data[0]
+  if (!material) {
+    const error = new Error('资料不存在')
+    error.code = 'material_not_found'
+    throw error
+  }
+  return material
+}
+
 async function getMaterialDetail({ db, openid, materialId }) {
   assertRequired(materialId, 'missing_material_id', '缺少资料 ID')
 
@@ -66,5 +79,6 @@ async function getMaterialDetail({ db, openid, materialId }) {
 module.exports = {
   createMaterial,
   getMaterialDetail,
+  getMaterialForOwner,
   listMaterials,
 }

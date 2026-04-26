@@ -34,6 +34,43 @@ describe('parse service', () => {
     expect(status.material.readyCandidateCount).toBe(1)
   })
 
+  it('passes the original material file id to extractText', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'cloud://env/materials/user_a/a.pdf', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    const job = await startParse({ db, openid: 'user_a', materialId: material._id, now: '2026-04-26T00:00:01.000Z' })
+
+    await runParseJob({
+      db,
+      openid: 'user_a',
+      jobId: job._id,
+      now: '2026-04-26T00:00:02.000Z',
+      extractText: async (inputMaterial) => {
+        expect(inputMaterial.fileID).toBe('cloud://env/materials/user_a/a.pdf')
+        return '1. 棰樼洰\nA. 鐢瞈nB. 涔橽n绛旀锛欰'
+      },
+    })
+  })
+
+  it('returns the newer active parse job over an older failed job', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    await db.collection('parse_jobs').add({
+      data: {
+        materialId: material._id,
+        ownerOpenid: 'user_a',
+        status: 'failed',
+        createdAt: '2026-04-26T00:00:01.000Z',
+        updatedAt: '2026-04-26T00:00:01.000Z',
+      },
+    })
+    const newer = await startParse({ db, openid: 'user_a', materialId: material._id, now: '2026-04-26T00:00:02.000Z' })
+
+    const status = await getParseStatus({ db, openid: 'user_a', materialId: material._id })
+
+    expect(status.job._id).toBe(newer._id)
+    expect(status.job.status).toBe('pending')
+  })
+
   it('returns existing result when job is already done', async () => {
     const db = createFakeDb()
     const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
