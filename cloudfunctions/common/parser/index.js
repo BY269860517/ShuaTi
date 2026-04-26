@@ -56,26 +56,37 @@ function stripAnswerAndExplanation(block) {
 
 function splitInlineOptions(line) {
   const optionMarker = /(^|\s)(\(?[A-Ha-h]\)?\s*(?:[.、．):：])\s*)/g
+  const ignoredMarkerPrefix = /(?:图|表|Figure|Table)\s*$/i
   const parts = []
-  let lastIndex = 0
+  const markers = []
   let match = optionMarker.exec(line)
 
   while (match) {
     const markerStart = match.index + match[1].length
-    if (markerStart > lastIndex) {
-      parts.push(line.slice(lastIndex, markerStart).trim())
+    const prefix = line.slice(0, markerStart)
+    if (!ignoredMarkerPrefix.test(prefix)) {
+      markers.push({
+        marker: match[2],
+        markerEnd: optionMarker.lastIndex,
+        markerStart,
+      })
     }
-    const nextIndex = optionMarker.lastIndex
-    const nextMatch = optionMarker.exec(line)
-    const optionTextEnd = nextMatch ? nextMatch.index + nextMatch[1].length : line.length
-    parts.push(`${match[2]}${line.slice(nextIndex, optionTextEnd).trim()}`.trim())
-    lastIndex = optionTextEnd
-    match = nextMatch
+    match = optionMarker.exec(line)
   }
 
-  if (lastIndex === 0) {
+  if (markers.length === 0) {
     return [line]
   }
+
+  let lastIndex = 0
+  markers.forEach((marker, index) => {
+    if (marker.markerStart > lastIndex) {
+      parts.push(line.slice(lastIndex, marker.markerStart).trim())
+    }
+    const optionTextEnd = markers[index + 1]?.markerStart || line.length
+    parts.push(`${marker.marker}${line.slice(marker.markerEnd, optionTextEnd).trim()}`.trim())
+    lastIndex = optionTextEnd
+  })
 
   if (lastIndex < line.length) {
     parts.push(line.slice(lastIndex).trim())

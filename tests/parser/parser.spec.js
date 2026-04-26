@@ -129,6 +129,26 @@ describe('parseQuestions inline_answer', () => {
     expect(result[0].status).toBe('ready')
   })
 
+  it('does not split spaced figure and table labels as inline options', () => {
+    const cases = [
+      ['1. 请根据图 A.1 判断 A. 甲 B. 乙 答案：A', '请根据图 A.1 判断'],
+      ['1. 请根据表 B.2 判断 A. 甲 B. 乙 答案：A', '请根据表 B.2 判断'],
+      ['1. See Figure A.1 and choose A. 甲 B. 乙 答案：A', 'See Figure A.1 and choose'],
+      ['1. See Table B.2 and choose A. 甲 B. 乙 答案：A', 'See Table B.2 and choose'],
+    ]
+
+    cases.forEach(([text, expectedStem]) => {
+      const result = parseQuestions({ mode: 'inline_answer', text })
+
+      expect(result[0].stem).toBe(expectedStem)
+      expect(result[0].options).toEqual([
+        { key: 'A', text: '甲' },
+        { key: 'B', text: '乙' },
+      ])
+      expect(result[0].status).toBe('ready')
+    })
+  })
+
   it('marks duplicate option keys as need_review', () => {
     const result = parseQuestions({
       mode: 'inline_answer',
