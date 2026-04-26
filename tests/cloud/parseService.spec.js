@@ -285,6 +285,72 @@ describe('parse service', () => {
     expect(storedMaterial.data[0].errorMessage).toBe('')
   })
 
+  it('does not let a stale successful runner overwrite parse output after losing lock', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    const job = await startParse({ db, openid: 'user_a', materialId: material._id, now: '2026-04-26T00:00:01.000Z' })
+    const pageId = `material_page_${job._id}_1`
+    const candidateId = `parse_candidate_${job._id}_0`
+
+    const result = await runParseJob({
+      db,
+      openid: 'user_a',
+      jobId: job._id,
+      now: '2026-04-26T00:00:02.000Z',
+      extractText: async () => {
+        await db.collection('material_pages').add({
+          data: {
+            _id: pageId,
+            jobId: job._id,
+            materialId: material._id,
+            ownerOpenid: 'user_a',
+            pageNo: 1,
+            text: 'winner output',
+            createdAt: '2026-04-26T00:00:02.400Z',
+          },
+        })
+        await db.collection('parse_candidates').add({
+          data: {
+            _id: candidateId,
+            jobId: job._id,
+            materialId: material._id,
+            ownerOpenid: 'user_a',
+            questionNo: 'winner',
+            status: 'ready',
+            createdAt: '2026-04-26T00:00:02.400Z',
+            updatedAt: '2026-04-26T00:00:02.400Z',
+          },
+        })
+        await db.collection('parse_jobs').doc(job._id).update({
+          data: {
+            status: 'done',
+            lockToken: '',
+            lockUntil: '',
+            finishedAt: '2026-04-26T00:00:02.500Z',
+            errorMessage: '',
+            updatedAt: '2026-04-26T00:00:02.500Z',
+          },
+        })
+        await db.collection('materials').doc(material._id).update({
+          data: { status: 'reviewing', errorMessage: '', updatedAt: '2026-04-26T00:00:02.500Z' },
+        })
+        return '1. stale output\nA. stale A\nB. stale B\n答案：A'
+      },
+    })
+
+    const storedJob = await db.collection('parse_jobs').doc(job._id).get()
+    const storedMaterial = await db.collection('materials').doc(material._id).get()
+    const pages = await db.collection('material_pages').where({ jobId: job._id }).get()
+    const candidates = await db.collection('parse_candidates').where({ jobId: job._id }).get()
+    expect(result.status).toBe('done')
+    expect(storedJob.data[0].status).toBe('done')
+    expect(storedMaterial.data[0].status).toBe('reviewing')
+    expect(pages.data).toHaveLength(1)
+    expect(pages.data[0].text).toBe('winner output')
+    expect(candidates.data).toHaveLength(1)
+    expect(candidates.data[0].questionNo).toBe('winner')
+  })
+
   it('does not update material when guarded failure finalization misses', async () => {
     const db = createFakeDb()
     const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })

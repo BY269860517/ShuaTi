@@ -166,6 +166,11 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
     const text = await extractText(material)
     if (!text || !text.trim()) throw new Error('PDF 无可解析文本')
 
+    const outputJob = await getJobForUser({ db, openid, jobId })
+    if (outputJob.status === 'done' || outputJob.lockToken !== lockToken) {
+      return outputJob
+    }
+
     await addOrUpdateById(db.collection('material_pages'), {
       _id: createMaterialPageId(job._id, 1),
       jobId: job._id,
