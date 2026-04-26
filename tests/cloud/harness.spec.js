@@ -48,4 +48,83 @@ describe('cloud service harness', () => {
       },
     ])
   })
+
+  it('updates one row by document id', async () => {
+    const db = createFakeDb()
+    const questions = db.collection('questions')
+    const { _id } = await questions.add({
+      data: {
+        owner: 'user_a',
+        status: 'draft',
+      },
+    })
+
+    const update = await questions.doc(_id).update({
+      data: {
+        status: 'ready',
+      },
+    })
+    const result = await questions.doc(_id).get()
+
+    expect(update).toEqual({ stats: { updated: 1 } })
+    expect(result.data[0].status).toBe('ready')
+  })
+
+  it('returns zero updated count for missing document id', async () => {
+    const db = createFakeDb()
+    const questions = db.collection('questions')
+
+    const update = await questions.doc('missing').update({
+      data: {
+        status: 'ready',
+      },
+    })
+
+    expect(update).toEqual({ stats: { updated: 0 } })
+  })
+
+  it('updates all rows matching a query', async () => {
+    const db = createFakeDb()
+    const questions = db.collection('questions')
+    await questions.add({ data: { owner: 'user_a', status: 'draft' } })
+    await questions.add({ data: { owner: 'user_a', status: 'draft' } })
+    await questions.add({ data: { owner: 'user_b', status: 'draft' } })
+
+    const update = await questions.where({ owner: 'user_a' }).update({
+      data: {
+        status: 'ready',
+      },
+    })
+    const userA = await questions.where({ owner: 'user_a' }).get()
+    const userB = await questions.where({ owner: 'user_b' }).get()
+
+    expect(update).toEqual({ stats: { updated: 2 } })
+    expect(userA.data.map((row) => row.status)).toEqual(['ready', 'ready'])
+    expect(userB.data[0].status).toBe('draft')
+  })
+
+  it('returns clone-isolated rows from get', async () => {
+    const db = createFakeDb()
+    const questions = db.collection('questions')
+    const { _id } = await questions.add({
+      data: {
+        owner: 'user_a',
+        meta: {
+          source: 'pdf',
+        },
+      },
+    })
+
+    const firstRead = await questions.doc(_id).get()
+    firstRead.data[0].owner = 'mutated'
+    firstRead.data[0].meta.source = 'manual'
+    const secondRead = await questions.doc(_id).get()
+
+    expect(secondRead.data[0]).toMatchObject({
+      owner: 'user_a',
+      meta: {
+        source: 'pdf',
+      },
+    })
+  })
 })
