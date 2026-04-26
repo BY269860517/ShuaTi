@@ -2,7 +2,7 @@ const { parseQuestions } = require('../parser')
 const { assertRequired } = require('../response')
 const { getMaterialDetail, getMaterialForOwner } = require('./materialService')
 
-const ACTIVE_JOB_STATUSES = new Set(['pending', 'running', 'done'])
+const ACTIVE_JOB_STATUSES = new Set(['pending', 'running', 'finalizing', 'done'])
 
 function countStatuses(candidates) {
   return {
@@ -128,10 +128,10 @@ async function getJobForUser({ db, openid, jobId }) {
   return job
 }
 
-async function runParseJob({ db, openid, jobId, now, extractText }) {
+async function runParseJob({ db, openid, jobId, now, extractText, beforeFinalize }) {
   const job = await getJobForUser({ db, openid, jobId })
   if (job.status === 'done') return job
-  if (job.status === 'running' && job.lockUntil && job.lockUntil > now) {
+  if (['running', 'finalizing'].includes(job.status) && job.lockUntil && job.lockUntil > now) {
     return job
   }
 
@@ -171,6 +171,21 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
       return outputJob
     }
 
+    const candidates = parseQuestions({ text, mode: material.parseMode })
+    if (beforeFinalize) await beforeFinalize()
+
+    const finalizing = await db.collection('parse_jobs').where({
+      _id: job._id,
+      ownerOpenid: openid,
+      status: 'running',
+      lockToken,
+    }).update({
+      data: { status: 'finalizing', updatedAt: now },
+    })
+    if (finalizing.stats.updated !== 1) {
+      return getJobForUser({ db, openid, jobId })
+    }
+
     await addOrUpdateById(db.collection('material_pages'), {
       _id: createMaterialPageId(job._id, 1),
       jobId: job._id,
@@ -181,7 +196,6 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
       createdAt: now,
     })
 
-    const candidates = parseQuestions({ text, mode: material.parseMode })
     for (const [index, candidate] of candidates.entries()) {
       await addOrUpdateById(db.collection('parse_candidates'), {
         _id: createParseCandidateId(job._id, index),
@@ -203,7 +217,7 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
       return finalJob
     }
 
-    const finish = await db.collection('parse_jobs').where({ _id: job._id, ownerOpenid: openid, lockToken }).update({
+    const finish = await db.collection('parse_jobs').where({ _id: job._id, ownerOpenid: openid, status: 'finalizing', lockToken }).update({
       data: {
         status: candidates.length > 0 ? 'done' : 'failed',
         finishedAt: now,
