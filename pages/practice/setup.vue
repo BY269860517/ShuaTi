@@ -54,7 +54,7 @@ async function createPractice() {
 
   try {
     const result = await api.practiceCreate({ materialId: materialId.value || undefined, count: selectedCount.value })
-    uni.navigateTo({ url: `/pages/practice/do?sessionId=${result.session._id}` })
+    uni.redirectTo({ url: `/pages/practice/do?sessionId=${result.session._id}` })
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '练习创建失败，请重试'
   } finally {

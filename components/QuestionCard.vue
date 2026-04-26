@@ -7,6 +7,7 @@ const props = defineProps<{
   selectedKeys: string[]
   index: number
   total: number
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{ answer: [keys: string[]] }>()
@@ -28,6 +29,7 @@ const emit = defineEmits<{ answer: [keys: string[]] }>()
       :options="props.question.options"
       :model-value="props.selectedKeys"
       :mode="props.question.type"
+      :disabled="props.disabled"
       @update:model-value="emit('answer', $event)"
     />
   </view>

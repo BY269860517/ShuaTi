@@ -56,7 +56,7 @@ function goHome() {
 }
 
 function retryPractice() {
-  uni.navigateTo({ url: retryUrl.value })
+  uni.redirectTo({ url: retryUrl.value })
 }
 </script>
 

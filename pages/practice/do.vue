@@ -1,8 +1,21 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { api } from '@/common/api/cloud'
 import type { AnswerSubmitResult, PracticeSession, SafeQuestion } from '@/common/types'
+import {
+  advanceToNext,
+  afterGradingIntent,
+  buttonIntent,
+  canSubmit,
+  createPracticeFlowData,
+  currentQuestionId as getCurrentQuestionId,
+  gradingResult as getGradingResult,
+  recordGradingResult,
+  resetPracticeFlow,
+  selectAnswer,
+  selectedKeys as getSelectedKeys,
+} from '@/common/practiceFlow'
 import EmptyState from '@/components/EmptyState.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import LoadingState from '@/components/LoadingState.vue'
@@ -11,24 +24,24 @@ import QuestionCard from '@/components/QuestionCard.vue'
 const sessionId = ref('')
 const session = ref<PracticeSession | null>(null)
 const questions = ref<SafeQuestion[]>([])
-const currentIndex = ref(0)
-const selectedByQuestionId = ref<Record<string, string[]>>({})
-const gradingResults = ref<Record<string, AnswerSubmitResult>>({})
+const flow = reactive(createPracticeFlowData())
 const loading = ref(false)
 const submitting = ref(false)
 const errorMessage = ref('')
 const didLoad = ref(false)
 
 const totalCount = computed(() => questions.value.length)
-const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
-const currentQuestionId = computed(() => currentQuestion.value?._id || '')
-const currentSelectedKeys = computed(() => selectedByQuestionId.value[currentQuestionId.value] || [])
-const currentGradingResult = computed(() => gradingResults.value[currentQuestionId.value] || null)
+const currentQuestion = computed(() => questions.value[flow.currentIndex] || null)
+const currentQuestionId = computed(() => getCurrentQuestionId(flow))
+const currentSelectedKeys = computed(() => getSelectedKeys(flow))
+const currentGradingResult = computed(() => getGradingResult(flow))
 const hasSelection = computed(() => currentSelectedKeys.value.length > 0)
-const isLastQuestion = computed(() => currentIndex.value >= totalCount.value - 1)
+const canSubmitCurrent = computed(() => canSubmit(flow, submitting.value))
 const submitButtonText = computed(() => {
-  if (submitting.value) return '提交中'
-  if (currentGradingResult.value) return isLastQuestion.value ? '查看结果' : '下一题'
+  const intent = buttonIntent(flow, submitting.value)
+  if (intent === 'submitting') return '提交中'
+  if (intent === 'result') return '查看结果'
+  if (intent === 'next') return '下一题'
   return '提交答案'
 })
 
@@ -51,7 +64,7 @@ async function loadPractice() {
     const result = await api.practiceDetail(sessionId.value)
     session.value = result.session
     questions.value = result.questions
-    currentIndex.value = 0
+    resetPracticeFlow(flow, result.questions.map((question) => question._id))
     didLoad.value = true
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '练习加载失败'
@@ -62,14 +75,13 @@ async function loadPractice() {
 
 function saveAnswer(keys: string[]) {
   const questionId = currentQuestionId.value
-  if (!questionId || submitting.value || Boolean(currentGradingResult.value)) return
-
-  selectedByQuestionId.value[questionId] = keys
+  if (!questionId || submitting.value) return
+  selectAnswer(flow, questionId, keys)
 }
 
 async function submitCurrentAnswer() {
   const questionId = currentQuestionId.value
-  if (!sessionId.value || !questionId || submitting.value || currentGradingResult.value) return
+  if (!sessionId.value || !questionId || !canSubmitCurrent.value) return
 
   const selectedKeys = currentSelectedKeys.value
   if (selectedKeys.length === 0) {
@@ -82,7 +94,7 @@ async function submitCurrentAnswer() {
 
   try {
     const result = await api.answerSubmit({ sessionId: sessionId.value, questionId, selectedKeys })
-    gradingResults.value[questionId] = result
+    recordGradingResult(flow, result)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '答案提交失败，请重试'
   } finally {
@@ -96,12 +108,12 @@ function goNext() {
     return
   }
 
-  if (isLastQuestion.value) {
-    uni.navigateTo({ url: `/pages/practice/result?sessionId=${sessionId.value}` })
+  if (afterGradingIntent(flow) === 'result') {
+    uni.redirectTo({ url: `/pages/practice/result?sessionId=${sessionId.value}` })
     return
   }
 
-  currentIndex.value += 1
+  advanceToNext(flow)
   errorMessage.value = ''
 }
 
@@ -124,8 +136,9 @@ function formatAnswerKeys(gradingResult: AnswerSubmitResult): string {
       <QuestionCard
         :question="currentQuestion"
         :selected-keys="currentSelectedKeys"
-        :index="currentIndex + 1"
+        :index="flow.currentIndex + 1"
         :total="totalCount"
+        :disabled="Boolean(currentGradingResult)"
         @answer="saveAnswer"
       />
 
