@@ -39,6 +39,10 @@ export interface Material {
   ownerOpenid?: string
 }
 
+export type CreatedMaterial = Material & {
+  fileID?: string
+}
+
 export interface Candidate {
   _id: string
   materialId: string

@@ -1,6 +1,7 @@
 import type {
   AnswerSubmitResult,
   Candidate,
+  CreatedMaterial,
   Material,
   ParseJob,
   ParseMode,
@@ -68,7 +69,7 @@ export async function callFunction<T>(name: string, data: object = {}): Promise<
 
 export const api = {
   userLogin: () => callFunction<{ user: UserInfo }>('userLogin'),
-  materialCreate: (data: MaterialCreateInput) => callFunction<{ material: Material }>('materialCreate', data),
+  materialCreate: (data: MaterialCreateInput) => callFunction<{ material: CreatedMaterial }>('materialCreate', data),
   materialList: () => callFunction<{ materials: Material[] }>('materialList'),
   materialDetail: (materialId: string) => callFunction<{ material: Material }>('materialDetail', { materialId }),
   parseStart: (materialId: string) => callFunction<{ job: ParseJob }>('parseStart', { materialId }),
