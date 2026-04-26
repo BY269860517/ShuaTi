@@ -37,6 +37,39 @@ describe('parse service', () => {
     })
   })
 
+  it('resets a failed deterministic parse job when starting again', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    const job = await startParse({ db, openid: 'user_a', materialId: material._id, now: '2026-04-26T00:00:01.000Z' })
+    await db.collection('parse_jobs').doc(job._id).update({
+      data: {
+        status: 'failed',
+        lockUntil: '',
+        lockToken: '',
+        finishedAt: '2026-04-26T00:00:02.000Z',
+        errorMessage: 'old failure',
+        updatedAt: '2026-04-26T00:00:02.000Z',
+      },
+    })
+    await db.collection('materials').doc(material._id).update({
+      data: { status: 'failed', errorMessage: 'old failure', updatedAt: '2026-04-26T00:00:02.000Z' },
+    })
+
+    const restarted = await startParse({ db, openid: 'user_a', materialId: material._id, now: '2026-04-26T00:00:03.000Z' })
+    const storedMaterial = await db.collection('materials').doc(material._id).get()
+
+    expect(restarted).toMatchObject({
+      _id: job._id,
+      status: 'pending',
+      errorMessage: '',
+      updatedAt: '2026-04-26T00:00:03.000Z',
+    })
+    expect(storedMaterial.data[0]).toMatchObject({
+      status: 'parsing',
+      updatedAt: '2026-04-26T00:00:03.000Z',
+    })
+  })
+
   it('runs parser and stores candidates', async () => {
     const db = createFakeDb()
     const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
@@ -168,6 +201,88 @@ describe('parse service', () => {
     })
 
     expect(result.status).toBe('running')
+  })
+
+  it('does not extract text when conditional lock claim misses', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    const job = await startParse({ db, openid: 'user_a', materialId: material._id, now: '2026-04-26T00:00:01.000Z' })
+    const parseJobs = db.collection('parse_jobs')
+    const originalCollection = db.collection
+    const originalWhere = parseJobs.where
+    db.collection = (name) => (name === 'parse_jobs' ? parseJobs : originalCollection(name))
+    parseJobs.where = (query) => {
+      const base = originalWhere(query)
+      if (query && query._id === job._id && query.ownerOpenid === 'user_a' && query.status === 'pending' && query.updatedAt === '2026-04-26T00:00:01.000Z') {
+        return {
+          ...base,
+          async update() {
+            await parseJobs.doc(job._id).update({
+              data: {
+                status: 'running',
+                lockToken: 'other-runner',
+                lockUntil: '2026-04-26T00:10:00.000Z',
+                updatedAt: '2026-04-26T00:00:01.500Z',
+              },
+            })
+            return { stats: { updated: 0 } }
+          },
+        }
+      }
+      return base
+    }
+
+    const result = await runParseJob({
+      db,
+      openid: 'user_a',
+      jobId: job._id,
+      now: '2026-04-26T00:00:02.000Z',
+      extractText: async () => {
+        throw new Error('should not extract after CAS miss')
+      },
+    })
+
+    expect(result).toMatchObject({
+      _id: job._id,
+      status: 'running',
+      lockToken: 'other-runner',
+    })
+  })
+
+  it('does not let a stale failing runner overwrite done job and reviewing material', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    const job = await startParse({ db, openid: 'user_a', materialId: material._id, now: '2026-04-26T00:00:01.000Z' })
+
+    await expect(runParseJob({
+      db,
+      openid: 'user_a',
+      jobId: job._id,
+      now: '2026-04-26T00:00:02.000Z',
+      extractText: async () => {
+        await db.collection('parse_jobs').doc(job._id).update({
+          data: {
+            status: 'done',
+            lockToken: 'other-runner',
+            lockUntil: '',
+            finishedAt: '2026-04-26T00:00:02.500Z',
+            errorMessage: '',
+            updatedAt: '2026-04-26T00:00:02.500Z',
+          },
+        })
+        await db.collection('materials').doc(material._id).update({
+          data: { status: 'reviewing', errorMessage: '', updatedAt: '2026-04-26T00:00:02.500Z' },
+        })
+        throw new Error('stale runner failed')
+      },
+    })).rejects.toThrow('stale runner failed')
+
+    const storedJob = await db.collection('parse_jobs').doc(job._id).get()
+    const storedMaterial = await db.collection('materials').doc(material._id).get()
+    expect(storedJob.data[0].status).toBe('done')
+    expect(storedJob.data[0].errorMessage).toBe('')
+    expect(storedMaterial.data[0].status).toBe('reviewing')
+    expect(storedMaterial.data[0].errorMessage).toBe('')
   })
 
   it('blocks running another users parse job', async () => {

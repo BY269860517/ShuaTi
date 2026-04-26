@@ -46,6 +46,10 @@ function createParseCandidateId(jobId, index) {
   return `parse_candidate_${jobId}_${index}`
 }
 
+function createLockToken(jobId, now) {
+  return `${jobId}_${now}`
+}
+
 async function addOrUpdateById(collection, data) {
   try {
     await collection.add({ data })
@@ -55,11 +59,33 @@ async function addOrUpdateById(collection, data) {
   }
 }
 
+async function resetParseJob({ db, job, material, now }) {
+  const data = {
+    status: 'pending',
+    lockUntil: '',
+    lockToken: '',
+    startedAt: '',
+    finishedAt: '',
+    errorMessage: '',
+    stats: {},
+    updatedAt: now,
+  }
+  await db.collection('parse_jobs').doc(job._id).update({ data })
+  await db.collection('materials').doc(material._id).update({
+    data: { status: 'parsing', errorMessage: '', updatedAt: now },
+  })
+  return { ...job, ...data }
+}
+
 async function startParse({ db, openid, materialId, now }) {
   const material = await getMaterialDetail({ db, openid, materialId })
   const existing = await db.collection('parse_jobs').where({ materialId, ownerOpenid: openid }).get()
   const active = selectActiveJob(existing.data)
   if (active) return active
+  const reusable = existing.data.find((job) => job._id === createParseJobId(materialId)) || selectStatusJob(existing.data)
+  if (reusable) {
+    return resetParseJob({ db, job: reusable, material, now })
+  }
 
   const data = {
     _id: createParseJobId(materialId),
@@ -81,7 +107,8 @@ async function startParse({ db, openid, materialId, now }) {
     if (error.code !== 'duplicate_key') throw error
     const raced = await db.collection('parse_jobs').where({ _id: data._id, ownerOpenid: openid }).get()
     const job = raced.data[0]
-    if (job) return job
+    if (job && ACTIVE_JOB_STATUSES.has(job.status)) return job
+    if (job) return resetParseJob({ db, job, material, now })
     throw error
   }
   await db.collection('materials').doc(material._id).update({ data: { status: 'parsing', updatedAt: now } })
@@ -108,17 +135,28 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
     return job
   }
 
-  await db.collection('parse_jobs').doc(job._id).update({
+  const lockToken = createLockToken(job._id, now)
+  const lockUntil = new Date(Date.parse(now) + 5 * 60 * 1000).toISOString()
+  const claim = await db.collection('parse_jobs').where({
+    _id: job._id,
+    ownerOpenid: openid,
+    status: job.status,
+    updatedAt: job.updatedAt,
+  }).update({
     data: {
       status: 'running',
-      lockUntil: new Date(Date.parse(now) + 5 * 60 * 1000).toISOString(),
+      lockToken,
+      lockUntil,
       startedAt: job.startedAt || now,
       updatedAt: now,
     },
   })
+  if (claim.stats.updated !== 1) {
+    return getJobForUser({ db, openid, jobId })
+  }
 
   const lockedJob = await getJobForUser({ db, openid, jobId })
-  if (lockedJob.status === 'running' && lockedJob.lockUntil && lockedJob.lockUntil > now && lockedJob.updatedAt !== now) {
+  if (lockedJob.lockToken !== lockToken) {
     return lockedJob
   }
 
@@ -155,6 +193,26 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
     const stats = countStatuses(candidates)
     const materialStatus = candidates.length > 0 ? 'reviewing' : 'failed'
     const errorMessage = candidates.length > 0 ? '' : '未解析出题目'
+    const finalJob = await getJobForUser({ db, openid, jobId })
+    if (finalJob.status === 'done' || finalJob.lockToken !== lockToken) {
+      return finalJob
+    }
+
+    const finish = await db.collection('parse_jobs').where({ _id: job._id, ownerOpenid: openid, lockToken }).update({
+      data: {
+        status: candidates.length > 0 ? 'done' : 'failed',
+        finishedAt: now,
+        lockUntil: '',
+        lockToken: '',
+        stats,
+        errorMessage,
+        updatedAt: now,
+      },
+    })
+    if (finish.stats.updated !== 1) {
+      return getJobForUser({ db, openid, jobId })
+    }
+
     await db.collection('materials').doc(material._id).update({
       data: {
         status: materialStatus,
@@ -164,21 +222,15 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
         updatedAt: now,
       },
     })
-    await db.collection('parse_jobs').doc(job._id).update({
-      data: {
-        status: candidates.length > 0 ? 'done' : 'failed',
-        finishedAt: now,
-        lockUntil: '',
-        stats,
-        errorMessage,
-        updatedAt: now,
-      },
-    })
 
     return { ...job, status: candidates.length > 0 ? 'done' : 'failed', stats, errorMessage }
   } catch (error) {
-    await db.collection('parse_jobs').doc(job._id).update({
-      data: { status: 'failed', finishedAt: now, lockUntil: '', errorMessage: error.message, updatedAt: now },
+    const currentJob = await getJobForUser({ db, openid, jobId })
+    if (currentJob.status === 'done' || currentJob.lockToken !== lockToken) {
+      throw error
+    }
+    await db.collection('parse_jobs').where({ _id: job._id, ownerOpenid: openid, lockToken }).update({
+      data: { status: 'failed', finishedAt: now, lockUntil: '', lockToken: '', errorMessage: error.message, updatedAt: now },
     })
     if (material) {
       await db.collection('materials').doc(material._id).update({
