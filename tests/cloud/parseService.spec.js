@@ -285,6 +285,59 @@ describe('parse service', () => {
     expect(storedMaterial.data[0].errorMessage).toBe('')
   })
 
+  it('does not update material when guarded failure finalization misses', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    const job = await startParse({ db, openid: 'user_a', materialId: material._id, now: '2026-04-26T00:00:01.000Z' })
+    const parseJobs = db.collection('parse_jobs')
+    const originalCollection = db.collection
+    const originalWhere = parseJobs.where
+    const lockToken = `${job._id}_2026-04-26T00:00:02.000Z`
+    db.collection = (name) => (name === 'parse_jobs' ? parseJobs : originalCollection(name))
+    parseJobs.where = (query) => {
+      const base = originalWhere(query)
+      if (query && query._id === job._id && query.ownerOpenid === 'user_a' && query.lockToken === lockToken) {
+        return {
+          ...base,
+          async update() {
+            await parseJobs.doc(job._id).update({
+              data: {
+                status: 'done',
+                lockToken: '',
+                lockUntil: '',
+                finishedAt: '2026-04-26T00:00:02.500Z',
+                errorMessage: '',
+                updatedAt: '2026-04-26T00:00:02.500Z',
+              },
+            })
+            await db.collection('materials').doc(material._id).update({
+              data: { status: 'reviewing', errorMessage: '', updatedAt: '2026-04-26T00:00:02.500Z' },
+            })
+            return { stats: { updated: 0 } }
+          },
+        }
+      }
+      return base
+    }
+
+    await expect(runParseJob({
+      db,
+      openid: 'user_a',
+      jobId: job._id,
+      now: '2026-04-26T00:00:02.000Z',
+      extractText: async () => {
+        throw new Error('late failure')
+      },
+    })).rejects.toThrow('late failure')
+
+    const storedJob = await db.collection('parse_jobs').doc(job._id).get()
+    const storedMaterial = await db.collection('materials').doc(material._id).get()
+    expect(storedJob.data[0].status).toBe('done')
+    expect(storedJob.data[0].errorMessage).toBe('')
+    expect(storedMaterial.data[0].status).toBe('reviewing')
+    expect(storedMaterial.data[0].errorMessage).toBe('')
+  })
+
   it('blocks running another users parse job', async () => {
     const db = createFakeDb()
     const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })

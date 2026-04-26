@@ -229,9 +229,12 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
     if (currentJob.status === 'done' || currentJob.lockToken !== lockToken) {
       throw error
     }
-    await db.collection('parse_jobs').where({ _id: job._id, ownerOpenid: openid, lockToken }).update({
+    const fail = await db.collection('parse_jobs').where({ _id: job._id, ownerOpenid: openid, lockToken }).update({
       data: { status: 'failed', finishedAt: now, lockUntil: '', lockToken: '', errorMessage: error.message, updatedAt: now },
     })
+    if (fail.stats.updated !== 1) {
+      throw error
+    }
     if (material) {
       await db.collection('materials').doc(material._id).update({
         data: { status: 'failed', errorMessage: error.message, updatedAt: now },
