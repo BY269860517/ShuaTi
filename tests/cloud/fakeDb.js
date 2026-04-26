@@ -17,7 +17,7 @@ function createFakeDb() {
       doc(id) {
         return {
           async get() {
-            return { data: rows.filter((row) => row._id === id).map(structuredClone) }
+            return { data: rows.filter((row) => row._id === id).map((row) => structuredClone(row)) }
           },
           async update({ data }) {
             const row = rows.find((item) => item._id === id)
@@ -34,7 +34,7 @@ function createFakeDb() {
           )
         return {
           async get() {
-            return { data: matched().map(structuredClone) }
+            return { data: matched().map((row) => structuredClone(row)) }
           },
           async update({ data }) {
             const items = matched()
