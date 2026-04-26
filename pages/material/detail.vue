@@ -14,7 +14,9 @@ const material = ref<Material | null>(null)
 const job = ref<ParseJob | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
+const pageActive = ref(false)
 let pollingTimer: ReturnType<typeof setInterval> | null = null
+let statusRefreshInFlight = false
 
 const hasReviewCandidates = computed(() => {
   const item = material.value
@@ -35,21 +37,23 @@ const failedMessage = computed(() => {
 })
 
 onLoad((options) => {
+  pageActive.value = true
   materialId.value = String(options?.materialId || '')
   loadDetail()
 })
 
 onShow(() => {
-  if (material.value?.status === 'parsing') {
-    startPolling()
-  }
+  pageActive.value = true
+  syncPolling()
 })
 
 onHide(() => {
+  pageActive.value = false
   clearPolling()
 })
 
 onUnload(() => {
+  pageActive.value = false
   clearPolling()
 })
 
@@ -68,6 +72,7 @@ async function loadDetail() {
     const statusResult = await api.parseStatus(materialId.value)
     material.value = statusResult.material
     job.value = statusResult.job
+    if (!pageActive.value) return
     syncPolling()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '资料加载失败'
@@ -77,20 +82,31 @@ async function loadDetail() {
 }
 
 async function refreshParseStatus() {
-  if (!materialId.value) return
+  if (!materialId.value || !pageActive.value || statusRefreshInFlight) return
+
+  statusRefreshInFlight = true
 
   try {
     const statusResult = await api.parseStatus(materialId.value)
+    if (!pageActive.value) return
     material.value = statusResult.material
     job.value = statusResult.job
     syncPolling()
   } catch (error) {
+    if (!pageActive.value) return
     errorMessage.value = error instanceof Error ? error.message : '解析状态刷新失败'
     clearPolling()
+  } finally {
+    statusRefreshInFlight = false
   }
 }
 
 function syncPolling() {
+  if (!pageActive.value) {
+    clearPolling()
+    return
+  }
+
   if (material.value?.status === 'parsing') {
     startPolling()
   } else {
@@ -99,7 +115,7 @@ function syncPolling() {
 }
 
 function startPolling() {
-  if (pollingTimer) return
+  if (!pageActive.value || pollingTimer) return
   pollingTimer = setInterval(() => {
     refreshParseStatus()
   }, 3000)

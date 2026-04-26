@@ -15,6 +15,10 @@ type UploadResult = {
   fileID: string
 }
 
+interface ChooseMessageFileResult {
+  tempFiles: ChosenFile[]
+}
+
 const parseMode = ref<ParseMode>('inline_answer')
 const selectedFile = ref<ChosenFile | null>(null)
 const uploading = ref(false)
@@ -33,11 +37,7 @@ async function choosePdf() {
   errorMessage.value = ''
 
   try {
-    const result = await wx.chooseMessageFile({
-      count: 1,
-      type: 'file',
-      extension: ['pdf'],
-    })
+    const result = await chooseMessageFile()
     const file = result.tempFiles[0]
     if (!file) return
 
@@ -54,6 +54,18 @@ async function choosePdf() {
   }
 }
 
+function chooseMessageFile(): Promise<ChooseMessageFileResult> {
+  return new Promise((resolve, reject) => {
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      extension: ['pdf'],
+      success: resolve,
+      fail: reject,
+    })
+  })
+}
+
 async function submitUpload() {
   const file = selectedFile.value
   if (!file || uploading.value) return
@@ -63,7 +75,7 @@ async function submitUpload() {
 
   try {
     const uploadResult = await wx.cloud.uploadFile({
-      cloudPath: `materials/${Date.now()}-${file.name}`,
+      cloudPath: `materials/${Date.now()}-${sanitizeCloudFileName(file.name)}`,
       filePath: file.path,
     }) as UploadResult
 
@@ -82,6 +94,13 @@ async function submitUpload() {
   } finally {
     uploading.value = false
   }
+}
+
+function sanitizeCloudFileName(fileName: string): string {
+  const trimmed = fileName.trim()
+  const fallback = 'material.pdf'
+  if (!trimmed) return fallback
+  return trimmed.replace(/[\/\\?%#]+/g, '_') || fallback
 }
 </script>
 

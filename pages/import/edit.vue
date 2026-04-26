@@ -110,14 +110,31 @@ function validateForm(): boolean {
     return false
   }
 
-  const validOptions = options.value.filter((option) => option.key.trim() && option.text.trim())
-  if (!validOptions.length) {
+  const normalizedOptions = normalizeOptions()
+  const optionKeySet = new Set(normalizedOptions.map((option) => option.key))
+  if (!normalizedOptions.length) {
     errorMessage.value = '至少保留一个完整选项'
     return false
   }
 
-  if (!answerKeys.value.length) {
+  if (optionKeySet.size !== normalizedOptions.length) {
+    errorMessage.value = '选项标识不能重复'
+    return false
+  }
+
+  const normalizedAnswers = normalizeAnswerKeys(answerKeys.value)
+  if (!normalizedAnswers.length) {
     errorMessage.value = '答案不能为空'
+    return false
+  }
+
+  if (normalizedAnswers.some((key) => !optionKeySet.has(key))) {
+    errorMessage.value = '答案必须来自现有选项'
+    return false
+  }
+
+  if (type.value !== 'multiple' && normalizedAnswers.length > 1) {
+    errorMessage.value = '单选或判断题只能有一个答案'
     return false
   }
 
@@ -131,13 +148,13 @@ async function saveCandidate() {
   saving.value = true
 
   try {
+    const normalizedOptions = normalizeOptions()
+    const normalizedAnswers = normalizeAnswerKeys(answerKeys.value)
     const candidatePayload: CandidateUpdateInput = {
       stem: stem.value.trim(),
       type: type.value,
-      options: options.value
-        .map((option) => ({ key: option.key.trim().toUpperCase(), text: option.text.trim() }))
-        .filter((option) => option.key && option.text),
-      answerKeys: answerKeys.value,
+      options: normalizedOptions,
+      answerKeys: normalizedAnswers,
       explanation: explanation.value.trim(),
     }
 
@@ -155,11 +172,17 @@ async function saveCandidate() {
   }
 }
 
-function normalizeAnswerKeys(value: string): string[] {
-  return value
-    .split(/[,\s，、]+/)
+function normalizeOptions(): OptionItem[] {
+  return options.value
+    .map((option) => ({ key: option.key.trim().toUpperCase(), text: option.text.trim() }))
+    .filter((option) => option.key && option.text)
+}
+
+function normalizeAnswerKeys(value: string | string[]): string[] {
+  const rawValues = Array.isArray(value) ? value : value.split(/[,\s，、]+/)
+  return Array.from(new Set(rawValues
     .map((item) => item.trim().toUpperCase())
-    .filter(Boolean)
+    .filter(Boolean)))
 }
 
 function nextOptionKey(): string {

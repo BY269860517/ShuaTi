@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:mp-weixin": "UNI_INPUT_DIR=. uni -p mp-weixin",
-    "build:mp-weixin": "UNI_INPUT_DIR=. uni build -p mp-weixin",
+    "dev:mp-weixin": "node scripts/uni-cli.mjs -p mp-weixin",
+    "build:mp-weixin": "node scripts/uni-cli.mjs build -p mp-weixin",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:parser": "vitest run tests/parser",

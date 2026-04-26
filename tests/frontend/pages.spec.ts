@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 
 function read(path: string): string {
@@ -35,11 +35,38 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('chooseMessageFile')
     expect(source).toContain("extension: ['pdf']")
     expect(source).toContain('wx.cloud.uploadFile')
-    expect(source).toContain('materials/${Date.now()}-${file.name}')
+    expect(source).toContain('materials/${Date.now()}-${sanitizeCloudFileName(file.name)}')
     expect(source).toContain('api.materialCreate')
     expect(source).toContain('api.parseStart(material._id)')
     expect(source).toContain("parseMode = ref<ParseMode>('inline_answer')")
     expect(source).toContain('answer_at_end')
+  })
+
+  test('upload page wraps callback-only file chooser and sanitizes cloud path filenames', () => {
+    const source = read('pages/upload/index.vue')
+
+    expect(source).toContain('function chooseMessageFile()')
+    expect(source).toContain('return new Promise')
+    expect(source).toContain('success: resolve')
+    expect(source).toContain('fail: reject')
+    expect(source).toContain('const result = await chooseMessageFile()')
+    expect(source).not.toContain('await wx.chooseMessageFile')
+    expect(source).toContain('sanitizeCloudFileName')
+    expect(source).toContain('replace(')
+    expect(source).toContain('?%#')
+  })
+
+  test('package scripts invoke uni through a cross-platform node wrapper', () => {
+    const packageJson = JSON.parse(read('package.json')) as { scripts: Record<string, string> }
+    const wrapperSource = read('scripts/uni-cli.mjs')
+
+    expect(existsSync('scripts/uni-cli.mjs')).toBe(true)
+    expect(packageJson.scripts['dev:mp-weixin']).toBe('node scripts/uni-cli.mjs -p mp-weixin')
+    expect(packageJson.scripts['build:mp-weixin']).toBe('node scripts/uni-cli.mjs build -p mp-weixin')
+    expect(wrapperSource).toContain("process.env.UNI_INPUT_DIR || '.'")
+    expect(wrapperSource).toContain('@dcloudio')
+    expect(wrapperSource).toContain('vite-plugin-uni')
+    expect(wrapperSource).toContain('spawn')
   })
 
   test('material detail page loads detail, polls parse status, and links review/practice', () => {
@@ -52,6 +79,17 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('clearPolling()')
     expect(source).toContain('/pages/import/review?materialId=')
     expect(source).toContain('/pages/practice/setup?materialId=')
+  })
+
+  test('material detail polling is active-page aware and blocks overlapping status refreshes', () => {
+    const source = read('pages/material/detail.vue')
+
+    expect(source).toContain('const pageActive = ref(false)')
+    expect(source).toContain('let statusRefreshInFlight = false')
+    expect(source).toContain('pageActive.value = true')
+    expect(source).toContain('pageActive.value = false')
+    expect(source).toContain('if (!materialId.value || !pageActive.value || statusRefreshInFlight) return')
+    expect(source).toContain('if (!pageActive.value) return')
   })
 
   test('candidate review page groups candidates and confirms import', () => {
@@ -83,5 +121,18 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('removeOption')
     expect(source).toContain('answerKeys')
     expect(source).toContain('navigateBack')
+  })
+
+  test('candidate edit validation normalizes answers and rejects invalid answer/option states', () => {
+    const source = read('pages/import/edit.vue')
+
+    expect(source).toContain('normalizeOptions()')
+    expect(source).toContain('normalizeAnswerKeys(answerKeys.value)')
+    expect(source).toContain('new Set(normalizedOptions.map((option) => option.key))')
+    expect(source).toContain('optionKeySet.size !== normalizedOptions.length')
+    expect(source).toContain('normalizedAnswers.some((key) => !optionKeySet.has(key))')
+    expect(source).toContain("type.value !== 'multiple' && normalizedAnswers.length > 1")
+    expect(source).toContain('options: normalizedOptions')
+    expect(source).toContain('answerKeys: normalizedAnswers')
   })
 })
