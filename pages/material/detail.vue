@@ -17,6 +17,7 @@ const errorMessage = ref('')
 const pageActive = ref(false)
 let pollingTimer: ReturnType<typeof setInterval> | null = null
 let statusRefreshInFlight = false
+const runnerTriggeredJobIds = new Set<string>()
 
 const hasReviewCandidates = computed(() => {
   const item = material.value
@@ -74,6 +75,7 @@ async function loadDetail() {
     job.value = statusResult.job
     if (!pageActive.value) return
     syncPolling()
+    triggerParseRunnerIfNeeded()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '资料加载失败'
   } finally {
@@ -91,6 +93,7 @@ async function refreshParseStatus() {
     if (!pageActive.value) return
     material.value = statusResult.material
     job.value = statusResult.job
+    triggerParseRunnerIfNeeded()
     syncPolling()
   } catch (error) {
     if (!pageActive.value) return
@@ -98,6 +101,26 @@ async function refreshParseStatus() {
     clearPolling()
   } finally {
     statusRefreshInFlight = false
+  }
+}
+
+async function triggerParseRunnerIfNeeded() {
+  const currentMaterial = material.value
+  const currentJob = job.value
+  if (!pageActive.value || currentMaterial?.status !== 'parsing' || !currentJob) return
+  if (currentJob.status === 'done' || currentJob.status === 'failed') return
+  if (runnerTriggeredJobIds.has(currentJob._id)) return
+
+  runnerTriggeredJobIds.add(currentJob._id)
+
+  try {
+    const runnerResult = await api.parseRunner(currentJob._id)
+    if (!pageActive.value) return
+    job.value = runnerResult.job
+    await refreshParseStatus()
+  } catch (error) {
+    if (!pageActive.value) return
+    errorMessage.value = error instanceof Error ? error.message : '解析任务启动失败'
   }
 }
 

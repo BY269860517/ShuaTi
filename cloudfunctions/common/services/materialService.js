@@ -42,7 +42,7 @@ async function createMaterial({ db, openid, now, input }) {
   }
 
   const created = await db.collection('materials').add({ data })
-  return { _id: created._id, ...data }
+  return summarizeMaterial({ _id: created._id, ...data })
 }
 
 async function listMaterials({ db, openid }) {

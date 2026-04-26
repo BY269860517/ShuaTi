@@ -87,7 +87,8 @@ async function submitUpload() {
     })
     const material: CreatedMaterial = createResult.material
 
-    await api.parseStart(material._id)
+    const parseResult = await api.parseStart(material._id)
+    await api.parseRunner(parseResult.job._id)
     uni.redirectTo({ url: `/pages/material/detail?materialId=${material._id}` })
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '上传失败，请重试'

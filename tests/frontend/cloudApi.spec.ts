@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { callFunction, type CloudFunctionError } from '../../common/api/cloud'
+import { api, callFunction, type CloudFunctionError } from '../../common/api/cloud'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -55,5 +55,31 @@ describe('frontend cloud api client', () => {
       message: '云函数响应格式错误',
       code: 'invalid_response',
     } satisfies Partial<CloudFunctionError>)
+  })
+
+  test('parseRunner calls cloud function with job id and returns job data', async () => {
+    const callFunctionMock = vi.fn().mockResolvedValue({
+      result: {
+        ok: true,
+        data: {
+          job: {
+            _id: 'job_1',
+            materialId: 'material_1',
+            status: 'done',
+            errorMessage: '',
+            stats: { candidateCount: 3 },
+          },
+        },
+      },
+    })
+    globalThis.wx = { cloud: { callFunction: callFunctionMock } }
+
+    await expect(api.parseRunner('job_1')).resolves.toMatchObject({
+      job: {
+        _id: 'job_1',
+        status: 'done',
+      },
+    })
+    expect(callFunctionMock).toHaveBeenCalledWith({ name: 'parseRunner', data: { jobId: 'job_1' } })
   })
 })

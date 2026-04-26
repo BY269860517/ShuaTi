@@ -1,6 +1,6 @@
 const { createFakeDb } = require('./fakeDb')
 const { upsertUser } = require('../../cloudfunctions/common/services/userService')
-const { createMaterial, getMaterialDetail, listMaterials } = require('../../cloudfunctions/common/services/materialService')
+const { createMaterial, getMaterialDetail, getMaterialForOwner, listMaterials } = require('../../cloudfunctions/common/services/materialService')
 
 describe('material services', () => {
   it('creates user from server openid', async () => {
@@ -71,6 +71,26 @@ describe('material services', () => {
     expect(material.ownerOpenid).toBe('user_a')
     expect(material.status).toBe('uploaded')
     expect(material.parseMode).toBe('inline_answer')
+  })
+
+  it('does not expose file id in create response but keeps it for backend owner reads', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-04-26T00:00:00.000Z',
+      input: {
+        fileID: 'cloud://env/materials/user_a/demo.pdf',
+        fileName: 'demo.pdf',
+        fileSize: 1024,
+        parseMode: 'inline_answer',
+      },
+    })
+
+    const stored = await getMaterialForOwner({ db, openid: 'user_a', materialId: material._id })
+
+    expect(material).not.toHaveProperty('fileID')
+    expect(stored.fileID).toBe('cloud://env/materials/user_a/demo.pdf')
   })
 
   it('defaults invalid parse mode to inline answer', async () => {

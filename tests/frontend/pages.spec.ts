@@ -45,7 +45,8 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('wx.cloud.uploadFile')
     expect(source).toContain('materials/${Date.now()}-${sanitizeCloudFileName(file.name)}')
     expect(source).toContain('api.materialCreate')
-    expect(source).toContain('api.parseStart(material._id)')
+    expect(source).toContain('const parseResult = await api.parseStart(material._id)')
+    expect(source).toContain('await api.parseRunner(parseResult.job._id)')
     expect(source).toContain("parseMode = ref<ParseMode>('inline_answer')")
     expect(source).toContain('answer_at_end')
   })
@@ -75,6 +76,11 @@ describe('pdf import frontend pages', () => {
     expect(wrapperSource).toContain('@dcloudio')
     expect(wrapperSource).toContain('vite-plugin-uni')
     expect(wrapperSource).toContain('spawn')
+    expect(wrapperSource).toContain('syncCloudfunctionsOutput')
+    expect(wrapperSource).toContain('copyCloudfunctions')
+    expect(wrapperSource).toContain('patchProjectConfig')
+    expect(wrapperSource).toContain('cloudfunctionRoot')
+    expect(wrapperSource).toContain("dist', 'build', 'mp-weixin', 'cloudfunctions")
   })
 
   test('material detail page loads detail, polls parse status, and links review/practice', () => {
@@ -82,6 +88,8 @@ describe('pdf import frontend pages', () => {
 
     expect(source).toContain('api.materialDetail(materialId.value)')
     expect(source).toContain('api.parseStatus(materialId.value)')
+    expect(source).toContain('triggerParseRunnerIfNeeded()')
+    expect(source).toContain('api.parseRunner(currentJob._id)')
     expect(source).toContain('setInterval')
     expect(source).toContain('3000')
     expect(source).toContain('clearPolling()')
@@ -94,9 +102,11 @@ describe('pdf import frontend pages', () => {
 
     expect(source).toContain('const pageActive = ref(false)')
     expect(source).toContain('let statusRefreshInFlight = false')
+    expect(source).toContain('const runnerTriggeredJobIds = new Set<string>()')
     expect(source).toContain('pageActive.value = true')
     expect(source).toContain('pageActive.value = false')
     expect(source).toContain('if (!materialId.value || !pageActive.value || statusRefreshInFlight) return')
+    expect(source).toContain('runnerTriggeredJobIds.has(currentJob._id)')
     expect(source).toContain('if (!pageActive.value) return')
   })
 

@@ -92,6 +92,7 @@ export const api = {
   materialList: () => callFunction<{ materials: Material[] }>('materialList'),
   materialDetail: (materialId: string) => callFunction<{ material: Material }>('materialDetail', { materialId }),
   parseStart: (materialId: string) => callFunction<{ job: ParseJob }>('parseStart', { materialId }),
+  parseRunner: (jobId: string) => callFunction<{ job: ParseJob }>('parseRunner', { jobId }),
   parseStatus: (materialId: string) => callFunction<{ material: Material; job: ParseJob | null }>('parseStatus', { materialId }),
   candidateList: (materialId: string) => callFunction<{ candidates: Candidate[] }>('candidateList', { materialId }),
   candidateDetail: (candidateId: string) => callFunction<{ candidate: Candidate }>('candidateDetail', { candidateId }),

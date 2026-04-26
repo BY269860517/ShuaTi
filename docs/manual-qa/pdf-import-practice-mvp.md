@@ -43,7 +43,7 @@ Upload and deploy these cloud functions to the selected CloudBase environment:
 - `practiceDetail`
 - `answerSubmit`
 
-Each cloud function depends on the shared code in `cloudfunctions/common`. During deployment, confirm the project toolchain packages and uploads `common` with every function, or confirm sibling `common` resolution is available in the deployed CloudBase environment.
+Each cloud function depends on the shared code in `cloudfunctions/common`. After running the mp-weixin build, open `dist\build\mp-weixin` in WeChat Developer Tools. The build output should contain `cloudfunctions\common`, `cloudfunctions\parseRunner`, and `project.config.json` should include `"cloudfunctionRoot": "cloudfunctions/"`. Upload cloud functions from that output directory so sibling `common` resolution matches runtime deployment.
 
 ## Test PDF Content
 
@@ -78,19 +78,18 @@ D. 52
 ## QA Steps
 
 1. Run `F:\.bun\bin\bun.exe run build:mp-weixin`.
-2. Open `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp\dist\build\mp-weixin` in WeChat Developer Tools, select the correct CloudBase environment, then compile the mini program.
+2. Open `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp\dist\build\mp-weixin` in WeChat Developer Tools, select the correct CloudBase environment, confirm the output includes `cloudfunctions` and `project.config.json` has `"cloudfunctionRoot": "cloudfunctions/"`, then compile the mini program.
 3. Launch the home page and confirm `userLogin` runs successfully. The app should create or load the current user without a visible login error.
 4. Upload the test PDF created from the content above.
-5. Confirm the created material appears with status `parsing`.
-6. Trigger `parseRunner` with the parse job id for the material. If the current UI does not directly trigger the runner, call it from the CloudBase console or by a temporary cloud function invocation. Pass JSON as `{ "jobId": "parse_job_<materialId>" }`, or get the actual parse job `_id` from `parseStatus` / the `parse_jobs` collection and pass `{ "jobId": "..." }`.
-7. Wait for parsing to finish and confirm the material enters `reviewing`.
-8. Open the candidate review flow. The sample PDF should produce 3 ready candidates.
-9. Open a candidate detail, edit fields such as stem / 题干, options, answer, or explanation, and save.
-10. Confirm import from the reviewed candidates. The expected `importedCount` is `3`.
-11. Call the same material's `importConfirm` cloud function / API again. The expected `importedCount` is `0`, or the UI import button is disabled / shows no importable questions. This verifies idempotency for the same reviewed candidate batch; it does not verify cross-material or same-content PDF deduplication.
-12. Start a practice session from the imported material. Before submitting an answer, confirm the correct answer and explanation are not shown.
-13. Submit a correct answer and confirm the result state marks it correct.
-14. Submit an incorrect answer in another practice attempt and confirm the result page shows the score and explanation.
+5. Confirm the created material appears with status `parsing`. The normal upload flow automatically calls `parseRunner` after `parseStart`; manually invoking `parseRunner` from the CloudBase console should only be needed for troubleshooting a stuck parse job. If troubleshooting, get the parse job `_id` from `parseStatus` / the `parse_jobs` collection and pass `{ "jobId": "..." }`.
+6. Wait for parsing to finish and confirm the material enters `reviewing`.
+7. Open the candidate review flow. The sample PDF should produce 3 ready candidates.
+8. Open a candidate detail, edit fields such as stem / 题干, options, answer, or explanation, and save.
+9. Confirm import from the reviewed candidates. The expected `importedCount` is `3`.
+10. Call the same material's `importConfirm` cloud function / API again. The expected `importedCount` is `0`, or the UI import button is disabled / shows no importable questions. This verifies idempotency for the same reviewed candidate batch; it does not verify cross-material or same-content PDF deduplication.
+11. Start a practice session from the imported material. Before submitting an answer, confirm the correct answer and explanation are not shown.
+12. Submit a correct answer and confirm the result state marks it correct.
+13. Submit an incorrect answer in another practice attempt and confirm the answer page shows the explanation after submit, then the result page shows the score.
 
 ## Troubleshooting / Expected Warnings
 
