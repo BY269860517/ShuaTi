@@ -210,17 +210,18 @@ Write:
     "test:cloud": "vitest run tests/cloud"
   },
   "dependencies": {
-    "@dcloudio/uni-app": "latest",
-    "@dcloudio/uni-components": "latest",
-    "@dcloudio/uni-mp-weixin": "latest",
-    "vue": "latest"
+    "@dcloudio/uni-app": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/uni-components": "3.0.0-alpha-5000820260420001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-alpha-5000820260420001",
+    "vue": "3.4.21"
   },
   "devDependencies": {
-    "@dcloudio/vite-plugin-uni": "latest",
-    "@vue/compiler-sfc": "latest",
-    "typescript": "latest",
-    "vite": "latest",
-    "vitest": "latest"
+    "@dcloudio/types": "3.4.30",
+    "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5000820260420001",
+    "@vue/compiler-sfc": "3.4.21",
+    "typescript": "5.4.5",
+    "vite": "5.2.8",
+    "vitest": "1.6.1"
   }
 }
 ```
@@ -236,7 +237,7 @@ $env:PATH='F:\.bun\bin;' + $env:PATH
 bun install
 ```
 
-Expected: `bun.lock` is created and `node_modules` appears under `G:\HBuilderProjects\ShuaTi\node_modules`.
+Expected: `bun.lock` is created and `node_modules` appears under the active worktree.
 
 - [ ] **Step 3: Create TypeScript and Vite config**
 
@@ -259,7 +260,7 @@ Write `tsconfig.json`:
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.vue", "tests/**/*.js"]
+  "include": ["**/*.ts", "**/*.vue", "tests/**/*.js", "tests/**/*.ts"]
 }
 ```
 
@@ -283,7 +284,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['tests/**/*.spec.js'],
+    include: ['tests/**/*.spec.{js,ts}'],
+    passWithNoTests: true,
     coverage: {
       reporter: ['text', 'html'],
     },
@@ -417,10 +419,10 @@ Write `pages.json`:
 Run:
 
 ```powershell
-bun test
+bun run test
 ```
 
-Expected: Vitest starts and reports no test files or exits cleanly after files are added in the next task.
+Expected: Vitest starts and exits cleanly even when no test files exist yet.
 
 - [ ] **Step 7: Commit app shell**
 

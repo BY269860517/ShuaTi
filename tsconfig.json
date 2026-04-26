@@ -14,5 +14,5 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.vue", "tests/**/*.js"]
+  "include": ["**/*.ts", "**/*.vue", "tests/**/*.js", "tests/**/*.ts"]
 }
