@@ -34,6 +34,27 @@ function selectStatusJob(jobs) {
   return sorted.find((job) => ACTIVE_JOB_STATUSES.has(job.status)) || sorted[0] || null
 }
 
+function createParseJobId(materialId) {
+  return `parse_job_${materialId}`
+}
+
+function createMaterialPageId(jobId, pageNo) {
+  return `material_page_${jobId}_${pageNo}`
+}
+
+function createParseCandidateId(jobId, index) {
+  return `parse_candidate_${jobId}_${index}`
+}
+
+async function addOrUpdateById(collection, data) {
+  try {
+    await collection.add({ data })
+  } catch (error) {
+    if (error.code !== 'duplicate_key') throw error
+    await collection.doc(data._id).update({ data })
+  }
+}
+
 async function startParse({ db, openid, materialId, now }) {
   const material = await getMaterialDetail({ db, openid, materialId })
   const existing = await db.collection('parse_jobs').where({ materialId, ownerOpenid: openid }).get()
@@ -41,6 +62,7 @@ async function startParse({ db, openid, materialId, now }) {
   if (active) return active
 
   const data = {
+    _id: createParseJobId(materialId),
     materialId,
     ownerOpenid: openid,
     status: 'pending',
@@ -53,9 +75,17 @@ async function startParse({ db, openid, materialId, now }) {
     updatedAt: now,
   }
 
-  const created = await db.collection('parse_jobs').add({ data })
+  try {
+    await db.collection('parse_jobs').add({ data })
+  } catch (error) {
+    if (error.code !== 'duplicate_key') throw error
+    const raced = await db.collection('parse_jobs').where({ _id: data._id, ownerOpenid: openid }).get()
+    const job = raced.data[0]
+    if (job) return job
+    throw error
+  }
   await db.collection('materials').doc(material._id).update({ data: { status: 'parsing', updatedAt: now } })
-  return { _id: created._id, ...data }
+  return data
 }
 
 async function getJobForUser({ db, openid, jobId }) {
@@ -87,32 +117,38 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
     },
   })
 
+  const lockedJob = await getJobForUser({ db, openid, jobId })
+  if (lockedJob.status === 'running' && lockedJob.lockUntil && lockedJob.lockUntil > now && lockedJob.updatedAt !== now) {
+    return lockedJob
+  }
+
+  let material = null
   try {
-    const material = await getMaterialForOwner({ db, openid, materialId: job.materialId })
+    material = await getMaterialForOwner({ db, openid, materialId: job.materialId })
     const text = await extractText(material)
     if (!text || !text.trim()) throw new Error('PDF 无可解析文本')
 
-    await db.collection('material_pages').add({
-      data: {
-        materialId: material._id,
-        ownerOpenid: openid,
-        pageNo: 1,
-        text,
-        createdAt: now,
-      },
+    await addOrUpdateById(db.collection('material_pages'), {
+      _id: createMaterialPageId(job._id, 1),
+      jobId: job._id,
+      materialId: material._id,
+      ownerOpenid: openid,
+      pageNo: 1,
+      text,
+      createdAt: now,
     })
 
     const candidates = parseQuestions({ text, mode: material.parseMode })
-    for (const candidate of candidates) {
-      await db.collection('parse_candidates').add({
-        data: {
-          ...candidate,
-          materialId: material._id,
-          ownerOpenid: openid,
-          importedQuestionId: '',
-          createdAt: now,
-          updatedAt: now,
-        },
+    for (const [index, candidate] of candidates.entries()) {
+      await addOrUpdateById(db.collection('parse_candidates'), {
+        _id: createParseCandidateId(job._id, index),
+        ...candidate,
+        jobId: job._id,
+        materialId: material._id,
+        ownerOpenid: openid,
+        importedQuestionId: '',
+        createdAt: now,
+        updatedAt: now,
       })
     }
 
@@ -144,9 +180,11 @@ async function runParseJob({ db, openid, jobId, now, extractText }) {
     await db.collection('parse_jobs').doc(job._id).update({
       data: { status: 'failed', finishedAt: now, lockUntil: '', errorMessage: error.message, updatedAt: now },
     })
-    await db.collection('materials').doc(job.materialId).update({
-      data: { status: 'failed', errorMessage: error.message, updatedAt: now },
-    })
+    if (material) {
+      await db.collection('materials').doc(material._id).update({
+        data: { status: 'failed', errorMessage: error.message, updatedAt: now },
+      })
+    }
     throw error
   }
 }
