@@ -5,8 +5,31 @@ function createQuestionId(candidateId) {
   return `question_${candidateId}`
 }
 
-async function markCandidateImported({ db, candidateId, questionId, now }) {
-  await db.collection('parse_candidates').doc(candidateId).update({
+async function claimCandidateForImport({ db, openid, materialId, candidate, now }) {
+  return db.collection('parse_candidates').where({
+    _id: candidate._id,
+    ownerOpenid: openid,
+    materialId,
+    status: 'ready',
+    importedQuestionId: '',
+    updatedAt: candidate.updatedAt,
+  }).update({
+    data: {
+      status: 'importing',
+      updatedAt: now,
+    },
+  })
+}
+
+async function markClaimedCandidateImported({ db, openid, materialId, candidateId, questionId, now }) {
+  return db.collection('parse_candidates').where({
+    _id: candidateId,
+    ownerOpenid: openid,
+    materialId,
+    status: 'importing',
+    importedQuestionId: '',
+    updatedAt: now,
+  }).update({
     data: {
       importedQuestionId: questionId,
       status: 'imported',
@@ -25,8 +48,8 @@ async function recoverDuplicateQuestion({ db, openid, materialId, candidateId, n
   }).get()
   if (!existing.data[0]) return false
 
-  await markCandidateImported({ db, candidateId, questionId, now })
-  return true
+  const linked = await markClaimedCandidateImported({ db, openid, materialId, candidateId, questionId, now })
+  return linked.stats.updated === 1
 }
 
 async function confirmImport({ db, openid, materialId, now }) {
@@ -38,6 +61,9 @@ async function confirmImport({ db, openid, materialId, now }) {
   let importedCount = 0
 
   for (const candidate of ready) {
+    const claimed = await claimCandidateForImport({ db, openid, materialId, candidate, now })
+    if (claimed.stats.updated !== 1) continue
+
     const questionId = createQuestionId(candidate._id)
     const questionData = {
       _id: questionId,
@@ -63,7 +89,12 @@ async function confirmImport({ db, openid, materialId, now }) {
       throw error
     }
 
-    await markCandidateImported({ db, candidateId: candidate._id, questionId, now })
+    const imported = await markClaimedCandidateImported({ db, openid, materialId, candidateId: candidate._id, questionId, now })
+    if (imported.stats.updated !== 1) {
+      const error = new Error('候选题导入状态冲突，请刷新后重试')
+      error.code = 'candidate_conflict'
+      throw error
+    }
     importedCount += 1
   }
 

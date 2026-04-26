@@ -50,7 +50,23 @@ async function updateCandidate({ db, openid, candidateId, now, input = {} }) {
     status: merged.status,
     updatedAt: now,
   }
-  await db.collection('parse_candidates').doc(candidateId).update({ data })
+  const updated = await db.collection('parse_candidates').where({
+    _id: candidateId,
+    ownerOpenid: openid,
+    status: existing.status,
+    updatedAt: existing.updatedAt,
+  }).update({ data })
+  if (updated.stats.updated !== 1) {
+    const current = await getCandidateDetail({ db, openid, candidateId })
+    if (current.status === 'imported') {
+      const error = new Error('已导入题目不能编辑')
+      error.code = 'candidate_imported'
+      throw error
+    }
+    const error = new Error('候选题已被修改，请刷新后重试')
+    error.code = 'candidate_conflict'
+    throw error
+  }
   return { ...existing, ...data }
 }
 
