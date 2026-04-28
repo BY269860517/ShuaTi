@@ -28,7 +28,7 @@ const hasReviewCandidates = computed(() => {
 const canPractice = computed(() => {
   const item = material.value
   if (!item) return false
-  return item.status === 'ready' || item.questionCount > 0
+  return item.status === 'ready' && item.questionCount > 0
 })
 
 const failedMessage = computed(() => {

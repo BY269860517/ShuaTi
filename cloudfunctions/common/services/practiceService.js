@@ -1,4 +1,5 @@
 const { assertRequired } = require('../response')
+const { getMaterialForOwner } = require('./materialService')
 
 function createError(code, message) {
   const error = new Error(message)
@@ -27,13 +28,25 @@ function createAttemptId(sessionId, questionId) {
   return `attempt_${sessionId}_${questionId}`
 }
 
+async function assertMaterialReadyForPractice({ db, openid, materialId }) {
+  if (!materialId) return
+
+  const material = await getMaterialForOwner({ db, openid, materialId })
+  if (material.status === 'ready' && Number(material.questionCount || 0) > 0) return
+  throw createError('practice_not_ready', '题目尚未完成导入')
+}
+
 async function listQuestions({ db, openid, materialId }) {
+  await assertMaterialReadyForPractice({ db, openid, materialId })
+
   const result = await db.collection('questions').where(questionQuery(openid, materialId)).get()
   return result.data.map(hideAnswer)
 }
 
 async function createPractice({ db, openid, materialId, count, now }) {
   assertRequired(now, 'missing_timestamp', '缺少创建时间')
+
+  await assertMaterialReadyForPractice({ db, openid, materialId })
 
   const result = await db.collection('questions').where(questionQuery(openid, materialId)).get()
   const limit = Math.max(1, Number(count || 10))
@@ -91,14 +104,7 @@ async function upsertAttempt({ db, openid, sessionId, questionId, selectedKeys, 
   }
   const existing = await attempts.where({ _id: attemptId, ownerOpenid: openid }).get()
   if (existing.data[0]) {
-    await attempts.where({ _id: attemptId, ownerOpenid: openid }).update({
-      data: {
-        selectedKeys,
-        isCorrect,
-        updatedAt: now,
-      },
-    })
-    return { ...existing.data[0], selectedKeys, isCorrect, updatedAt: now }
+    return existing.data[0]
   }
 
   try {
@@ -106,14 +112,8 @@ async function upsertAttempt({ db, openid, sessionId, questionId, selectedKeys, 
     return { ...data, _id: created._id }
   } catch (error) {
     if (error.code !== 'duplicate_key') throw error
-    await attempts.where({ _id: attemptId, ownerOpenid: openid }).update({
-      data: {
-        selectedKeys,
-        isCorrect,
-        updatedAt: now,
-      },
-    })
-    return data
+    const raced = await attempts.where({ _id: attemptId, ownerOpenid: openid }).get()
+    return raced.data[0] || data
   }
 }
 
@@ -130,7 +130,7 @@ async function answerSubmit({ db, openid, sessionId, questionId, selectedKeys, n
 
   const normalizedSelected = normalizeSelected(selectedKeys)
   const isCorrect = sameKeys(normalizedSelected, question.answerKeys)
-  await upsertAttempt({
+  const attempt = await upsertAttempt({
     db,
     openid,
     sessionId,
@@ -155,8 +155,8 @@ async function answerSubmit({ db, openid, sessionId, questionId, selectedKeys, n
 
   return {
     questionId,
-    selectedKeys: normalizedSelected,
-    isCorrect,
+    selectedKeys: attempt.selectedKeys,
+    isCorrect: attempt.isCorrect,
     answerKeys: question.answerKeys,
     explanation: question.explanation || '',
   }

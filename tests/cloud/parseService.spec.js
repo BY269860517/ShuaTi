@@ -1,8 +1,22 @@
 const { createFakeDb } = require('./fakeDb')
-const { createMaterial } = require('../../cloudfunctions/common/services/materialService')
+const { createMaterial: createStoredMaterial } = require('../../cloudfunctions/common/services/materialService')
 const { getParseStatus, runParseJob, startParse } = require('../../cloudfunctions/common/services/parseService')
 
 describe('parse service', () => {
+  function ownedFileId(openid, name = 'a.pdf') {
+    return `cloud://env/materials/${openid}/${name}`
+  }
+
+  async function createMaterial(options) {
+    return createStoredMaterial({
+      ...options,
+      input: {
+        ...options.input,
+        fileID: options.input.fileID === 'file' ? ownedFileId(options.openid) : options.input.fileID,
+      },
+    })
+  }
+
   it('creates one parse job for a material', async () => {
     const db = createFakeDb()
     const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'file', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })

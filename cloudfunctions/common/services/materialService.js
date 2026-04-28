@@ -2,6 +2,44 @@ const { assertRequired } = require('../response')
 
 const VALID_PARSE_MODES = new Set(['inline_answer', 'answer_at_end'])
 
+function createError(code, message) {
+  const error = new Error(message)
+  error.code = code
+  return error
+}
+
+function getOwnedStoragePath(fileID) {
+  const value = String(fileID || '')
+  if (!value || /%2f|%5c/i.test(value) || value.includes('?') || value.includes('#') || value.includes('\\')) {
+    return ''
+  }
+
+  let decoded = value
+  try {
+    decoded = decodeURIComponent(value)
+  } catch (_) {
+    return ''
+  }
+
+  if (decoded.includes('\\')) return ''
+  if (decoded.startsWith('materials/')) return decoded
+
+  const cloudPrefix = 'cloud://'
+  if (!decoded.startsWith(cloudPrefix)) return ''
+
+  const objectPathStart = decoded.indexOf('/', cloudPrefix.length)
+  if (objectPathStart === -1) return ''
+  return decoded.slice(objectPathStart + 1)
+}
+
+function assertFileBelongsToOwner(fileID, openid) {
+  const storagePath = getOwnedStoragePath(fileID)
+  const parts = storagePath.split('/')
+  const hasValidPathParts = parts.length > 2 && parts.every(Boolean) && !parts.includes('.') && !parts.includes('..')
+  if (parts[0] === 'materials' && parts[1] === openid && hasValidPathParts) return
+  throw createError('invalid_file_owner', 'PDF 文件不属于当前用户')
+}
+
 function summarizeMaterial(material) {
   return {
     _id: material._id,
@@ -23,6 +61,8 @@ function summarizeMaterial(material) {
 async function createMaterial({ db, openid, now, input }) {
   assertRequired(input.fileID, 'missing_file_id', '缺少 PDF 文件')
   assertRequired(input.fileName, 'missing_file_name', '缺少文件名')
+
+  assertFileBelongsToOwner(input.fileID, openid)
 
   const parseMode = VALID_PARSE_MODES.has(input.parseMode) ? input.parseMode : 'inline_answer'
   const data = {

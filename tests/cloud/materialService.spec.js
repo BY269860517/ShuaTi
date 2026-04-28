@@ -3,6 +3,10 @@ const { upsertUser } = require('../../cloudfunctions/common/services/userService
 const { createMaterial, getMaterialDetail, getMaterialForOwner, listMaterials } = require('../../cloudfunctions/common/services/materialService')
 
 describe('material services', () => {
+  function ownedFileId(openid, name = 'demo.pdf') {
+    return `cloud://env/materials/${openid}/${name}`
+  }
+
   it('creates user from server openid', async () => {
     const db = createFakeDb()
     const result = await upsertUser({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z' })
@@ -60,7 +64,7 @@ describe('material services', () => {
       openid: 'user_a',
       now: '2026-04-26T00:00:00.000Z',
       input: {
-        fileID: 'cloud://env/materials/user_a/demo.pdf',
+        fileID: ownedFileId('user_a'),
         fileName: 'demo.pdf',
         fileSize: 1024,
         parseMode: 'inline_answer',
@@ -80,7 +84,7 @@ describe('material services', () => {
       openid: 'user_a',
       now: '2026-04-26T00:00:00.000Z',
       input: {
-        fileID: 'cloud://env/materials/user_a/demo.pdf',
+        fileID: ownedFileId('user_a'),
         fileName: 'demo.pdf',
         fileSize: 1024,
         parseMode: 'inline_answer',
@@ -90,7 +94,7 @@ describe('material services', () => {
     const stored = await getMaterialForOwner({ db, openid: 'user_a', materialId: material._id })
 
     expect(material).not.toHaveProperty('fileID')
-    expect(stored.fileID).toBe('cloud://env/materials/user_a/demo.pdf')
+    expect(stored.fileID).toBe(ownedFileId('user_a'))
   })
 
   it('defaults invalid parse mode to inline answer', async () => {
@@ -100,7 +104,7 @@ describe('material services', () => {
       openid: 'user_a',
       now: '2026-04-26T00:00:00.000Z',
       input: {
-        fileID: 'cloud://env/materials/user_a/demo.pdf',
+        fileID: ownedFileId('user_a'),
         fileName: 'demo.pdf',
         fileSize: 1024,
         parseMode: 'forged_mode',
@@ -108,6 +112,52 @@ describe('material services', () => {
     })
 
     expect(material.parseMode).toBe('inline_answer')
+  })
+
+  it('rejects file ids outside the current users upload path', async () => {
+    const db = createFakeDb()
+
+    await expect(createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-04-26T00:00:00.000Z',
+      input: {
+        fileID: ownedFileId('user_b'),
+        fileName: 'forged.pdf',
+        fileSize: 1024,
+        parseMode: 'inline_answer',
+      },
+    })).rejects.toMatchObject({
+      code: 'invalid_file_owner',
+    })
+  })
+
+  it('rejects loose or ambiguous material file paths', async () => {
+    const db = createFakeDb()
+    const invalidFileIds = [
+      'cloud://env/private/materials/user_a/demo.pdf',
+      'cloud://env/materials/user_a/../demo.pdf',
+      'cloud://env/materials/user_a/folder%2Fdemo.pdf',
+      'cloud://env/materials/user_a/folder%5Cdemo.pdf',
+      'cloud://env/materials/user_a/demo.pdf?token=1',
+      'cloud://env/materials/user_a/demo.pdf#hash',
+    ]
+
+    for (const fileID of invalidFileIds) {
+      await expect(createMaterial({
+        db,
+        openid: 'user_a',
+        now: '2026-04-26T00:00:00.000Z',
+        input: {
+          fileID,
+          fileName: 'demo.pdf',
+          fileSize: 1024,
+          parseMode: 'inline_answer',
+        },
+      })).rejects.toMatchObject({
+        code: 'invalid_file_owner',
+      })
+    }
   })
 
   it('requires file id when creating material', async () => {
@@ -138,8 +188,8 @@ describe('material services', () => {
 
   it('lists only current user materials', async () => {
     const db = createFakeDb()
-    await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'a', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
-    await createMaterial({ db, openid: 'user_b', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'b', fileName: 'b.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: ownedFileId('user_a', 'a.pdf'), fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    await createMaterial({ db, openid: 'user_b', now: '2026-04-26T00:00:00.000Z', input: { fileID: ownedFileId('user_b', 'b.pdf'), fileName: 'b.pdf', fileSize: 1, parseMode: 'inline_answer' } })
 
     const result = await listMaterials({ db, openid: 'user_a' })
 
@@ -149,8 +199,8 @@ describe('material services', () => {
 
   it('lists current user materials newest first', async () => {
     const db = createFakeDb()
-    await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'old', fileName: 'old.pdf', fileSize: 1, parseMode: 'inline_answer' } })
-    await createMaterial({ db, openid: 'user_a', now: '2026-04-27T00:00:00.000Z', input: { fileID: 'new', fileName: 'new.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: ownedFileId('user_a', 'old.pdf'), fileName: 'old.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    await createMaterial({ db, openid: 'user_a', now: '2026-04-27T00:00:00.000Z', input: { fileID: ownedFileId('user_a', 'new.pdf'), fileName: 'new.pdf', fileSize: 1, parseMode: 'inline_answer' } })
 
     const result = await listMaterials({ db, openid: 'user_a' })
 
@@ -159,7 +209,7 @@ describe('material services', () => {
 
   it('returns detail for the material owner', async () => {
     const db = createFakeDb()
-    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'a', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: ownedFileId('user_a', 'a.pdf'), fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
 
     const detail = await getMaterialDetail({ db, openid: 'user_a', materialId: material._id })
 
@@ -172,7 +222,7 @@ describe('material services', () => {
 
   it('blocks detail access for other users', async () => {
     const db = createFakeDb()
-    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: 'a', fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: ownedFileId('user_a', 'a.pdf'), fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
 
     try {
       await getMaterialDetail({ db, openid: 'user_b', materialId: material._id })

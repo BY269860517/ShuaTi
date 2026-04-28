@@ -25,6 +25,28 @@ async function seedCandidate(db, overrides = {}) {
   return result._id
 }
 
+async function seedMaterial(db, overrides = {}) {
+  const result = await db.collection('materials').add({
+    data: {
+      _id: 'material_1',
+      ownerOpenid: 'user_a',
+      fileName: 'demo.pdf',
+      fileSize: 1024,
+      status: 'reviewing',
+      parseMode: 'inline_answer',
+      questionCount: 1,
+      readyCandidateCount: 1,
+      needReviewCandidateCount: 0,
+      invalidCandidateCount: 0,
+      errorMessage: '',
+      createdAt: '2026-04-26T00:00:00.000Z',
+      updatedAt: '2026-04-26T00:00:00.000Z',
+      ...overrides,
+    },
+  })
+  return result._id
+}
+
 describe('candidate service', () => {
   it('lists only current user candidates for a material', async () => {
     const db = createFakeDb()
@@ -274,6 +296,24 @@ describe('candidate service', () => {
 
     expect(first.importedCount).toBe(1)
     expect(second.importedCount).toBe(0)
+  })
+
+  it('marks the material ready and counts imported questions after import', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 0 })
+    await seedCandidate(db)
+
+    await confirmImport({ db, openid: 'user_a', materialId: 'material_1', now: '2026-04-26T00:00:10.000Z' })
+
+    const material = await db.collection('materials').doc('material_1').get()
+    expect(material.data[0]).toMatchObject({
+      status: 'ready',
+      questionCount: 1,
+      readyCandidateCount: 0,
+      needReviewCandidateCount: 0,
+      invalidCandidateCount: 0,
+      updatedAt: '2026-04-26T00:00:10.000Z',
+    })
   })
 
   it('does not import stale ready data if candidate changes before claim', async () => {

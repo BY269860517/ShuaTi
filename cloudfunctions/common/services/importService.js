@@ -25,6 +25,29 @@ function createCandidateConflict() {
   return error
 }
 
+function countCandidateStatuses(candidates) {
+  return {
+    readyCandidateCount: candidates.filter((candidate) => candidate.status === 'ready').length,
+    needReviewCandidateCount: candidates.filter((candidate) => candidate.status === 'need_review').length,
+    invalidCandidateCount: candidates.filter((candidate) => candidate.status === 'invalid').length,
+  }
+}
+
+async function updateMaterialAfterImport({ db, openid, materialId, candidates, now }) {
+  const questions = await db.collection('questions').where({ ownerOpenid: openid, materialId }).get()
+  const questionCount = questions.data.length
+  const status = questionCount > 0 ? 'ready' : 'reviewing'
+
+  await db.collection('materials').where({ _id: materialId, ownerOpenid: openid }).update({
+    data: {
+      status,
+      questionCount,
+      ...countCandidateStatuses(candidates),
+      updatedAt: now,
+    },
+  })
+}
+
 async function findMatchingQuestion({ db, openid, materialId, candidateId, sourceCandidateUpdatedAt }) {
   const questionId = createQuestionId(candidateId, sourceCandidateUpdatedAt)
   const result = await db.collection('questions').where({
@@ -273,6 +296,9 @@ async function confirmImport({ db, openid, materialId, now }) {
   for (const candidate of ready) {
     importedCount += await importReadyCandidate({ db, openid, materialId, candidate, now })
   }
+
+  const latestCandidates = await listCandidateRecords({ db, openid, materialId })
+  await updateMaterialAfterImport({ db, openid, materialId, candidates: latestCandidates, now })
 
   return { importedCount, skippedCount: candidates.length - importedCount }
 }

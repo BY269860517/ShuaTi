@@ -74,8 +74,9 @@ async function submitUpload() {
   errorMessage.value = ''
 
   try {
+    const loginResult = await api.userLogin()
     const uploadResult = await wx.cloud.uploadFile({
-      cloudPath: `materials/${Date.now()}-${sanitizeCloudFileName(file.name)}`,
+      cloudPath: `materials/${loginResult.user.openid}/${Date.now()}-${sanitizeCloudFileName(file.name)}`,
       filePath: file.path,
     }) as UploadResult
 
