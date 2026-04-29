@@ -13,14 +13,24 @@ const { createDbCompat } = requireShared('db')
 const { ok, toErrorResponse, assertRequired } = requireShared('response')
 const { upsertUser } = requireShared('services/userService')
 
+function normalizeLoginError(loginResult) {
+  const code = loginResult.code ?? loginResult.errCode
+  if (code === undefined || code === null || code === 0 || code === '0') {
+    return null
+  }
+
+  const error = new Error(loginResult.errMsg || loginResult.msg || loginResult.message || '登录失败')
+  error.code = code
+  return error
+}
+
 async function handleUserLogin({ event = {}, db, now, loginByWeixin }) {
   assertRequired(event.code, 'missing_login_code', '缺少登录凭证')
 
   const loginResult = await loginByWeixin({ code: event.code })
-  if (loginResult.code && loginResult.code !== 0) {
-    const error = new Error(loginResult.msg || loginResult.message || '登录失败')
-    error.code = loginResult.code
-    throw error
+  const loginError = normalizeLoginError(loginResult)
+  if (loginError) {
+    throw loginError
   }
 
   const uid = loginResult.uid
