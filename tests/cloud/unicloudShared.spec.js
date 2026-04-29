@@ -195,6 +195,36 @@ describe('uniCloud shared helpers', () => {
     })
   })
 
+  it('replaces stale native stats updated count with normalized updated count', async () => {
+    const db = createDbCompat({
+      collection() {
+        return {
+          doc() {
+            return {
+              update() {
+                return Promise.resolve({
+                  updated: 1,
+                  stats: {
+                    matched: 1,
+                    updated: 0,
+                  },
+                })
+              },
+            }
+          },
+        }
+      },
+    })
+
+    await expect(db.collection('materials').doc('row_1').update({ data: { status: 'ready' } })).resolves.toMatchObject({
+      updated: 1,
+      stats: {
+        matched: 1,
+        updated: 1,
+      },
+    })
+  })
+
   it('uses UTF-8 default internal error response', () => {
     expect(toErrorResponse(new Error()).error.message).toBe('服务异常')
   })
