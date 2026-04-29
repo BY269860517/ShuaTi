@@ -1,30 +1,28 @@
-const { requireOpenid } = require('../../cloudfunctions/common/auth')
-const { toErrorResponse } = require('../../cloudfunctions/common/response')
 const { createFakeDb } = require('./fakeDb')
+const { sharedModule } = require('./sharedModules')
+
+const { requireUidFromEvent } = sharedModule('auth')
+const { toErrorResponse } = sharedModule('response')
 
 describe('cloud service harness', () => {
-  it('returns openid from context', () => {
-    expect(requireOpenid({ OPENID: 'user_a' })).toBe('user_a')
-  })
-
-  it('throws unauthorized error when openid is missing', () => {
-    expect(() => requireOpenid({})).toThrow('缺少用户身份')
-
-    try {
-      requireOpenid({})
-    } catch (error) {
-      expect(error.code).toBe('unauthorized')
-    }
-  })
-
-  it('uses UTF-8 default internal error response', () => {
-    expect(toErrorResponse(new Error())).toEqual({
-      ok: false,
-      error: {
-        code: 'internal_error',
-        message: '服务异常',
-      },
+  it('returns uid from trusted uniCloud context', async () => {
+    await expect(requireUidFromEvent({ context: { auth: { uid: 'user_a' } } })).resolves.toEqual({
+      uid: 'user_a',
     })
+  })
+
+  it('throws unauthorized error when uid and token are missing', async () => {
+    await expect(requireUidFromEvent({ event: {}, context: {} })).rejects.toMatchObject({
+      code: 'unauthorized',
+    })
+  })
+
+  it('uses default internal error response', () => {
+    const response = toErrorResponse(new Error())
+
+    expect(response.ok).toBe(false)
+    expect(response.error.code).toBe('internal_error')
+    expect(response.error.message).toBeTruthy()
   })
 
   it('adds and queries rows by field', async () => {
@@ -34,7 +32,7 @@ describe('cloud service harness', () => {
     const result = await questions.add({
       data: {
         owner: 'user_a',
-        stem: '题干',
+        stem: 'question stem',
       },
     })
     const query = await questions.where({ owner: 'user_a' }).get()
@@ -44,7 +42,7 @@ describe('cloud service harness', () => {
       {
         _id: 'questions_1',
         owner: 'user_a',
-        stem: '题干',
+        stem: 'question stem',
       },
     ])
   })

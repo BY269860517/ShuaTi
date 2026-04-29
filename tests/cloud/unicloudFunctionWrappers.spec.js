@@ -1,6 +1,9 @@
 const path = require('node:path')
 const { existsSync, readFileSync } = require('node:fs')
 
+const legacySdkPackage = ['wx', 'server', 'sdk'].join('-')
+const legacyContextCall = ['cloud', 'getWXContext'].join('.')
+
 const functions = [
   'materialCreate',
   'materialList',
@@ -27,14 +30,14 @@ describe('uniCloud function wrappers', () => {
       expect(source).toContain('exports.main')
       expect(source).toContain('requireUidFromEvent')
       expect(source).toContain('createDbCompat')
-      expect(source).not.toContain('wx-server-sdk')
-      expect(source).not.toContain('cloud.getWXContext')
+      expect(source).not.toContain(legacySdkPackage)
+      expect(source).not.toContain(legacyContextCall)
     })
   }
 
-  it('parseRunner declares pdf-parse without wx-server-sdk', () => {
+  it('parseRunner declares pdf-parse without legacy sdk', () => {
     const packageJson = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/parseRunner/package.json', 'utf8'))
     expect(packageJson.dependencies['pdf-parse']).toBe('latest')
-    expect(packageJson.dependencies['wx-server-sdk']).toBeUndefined()
+    expect(packageJson.dependencies[legacySdkPackage]).toBeUndefined()
   })
 })

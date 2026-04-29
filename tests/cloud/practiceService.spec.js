@@ -1,10 +1,11 @@
 const { createFakeDb } = require('./fakeDb')
+const { sharedModule } = require('./sharedModules')
 const {
   answerSubmit,
   createPractice,
   getPracticeDetail,
   listQuestions,
-} = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/services/practiceService')
+} = sharedModule('services/practiceService')
 
 async function seedQuestion(db, overrides = {}) {
   const result = await db.collection('questions').add({

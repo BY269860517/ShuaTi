@@ -1,4 +1,5 @@
 const { beforeEach, describe, expect, it, mock } = require('bun:test')
+const { sharedModule } = require('./sharedModules')
 
 let checkTokenResult
 const checkTokenCalls = []
@@ -15,9 +16,9 @@ mock.module('uni-id-common', () => ({
   },
 }))
 
-const { requireUidFromEvent } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/auth')
-const { createDbCompat } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/db')
-const { toErrorResponse } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/response')
+const { requireUidFromEvent } = sharedModule('auth')
+const { createDbCompat } = sharedModule('db')
+const { toErrorResponse } = sharedModule('response')
 
 describe('uniCloud shared helpers', () => {
   beforeEach(() => {

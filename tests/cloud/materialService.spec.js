@@ -1,6 +1,8 @@
 const { createFakeDb } = require('./fakeDb')
-const { upsertUser } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/services/userService')
-const { createMaterial, getMaterialDetail, getMaterialForOwner, listMaterials } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/services/materialService')
+const { sharedModule } = require('./sharedModules')
+
+const { upsertUser } = sharedModule('services/userService')
+const { createMaterial, getMaterialDetail, getMaterialForOwner, listMaterials } = sharedModule('services/materialService')
 
 describe('material services', () => {
   function ownedFileId(openid, name = 'demo.pdf') {

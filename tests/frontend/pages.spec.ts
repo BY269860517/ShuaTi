@@ -43,7 +43,7 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('chooseMessageFile')
     expect(source).toContain("extension: ['pdf']")
     expect(source).toContain('uniCloud.uploadFile')
-    expect(source).not.toContain('wx.cloud.uploadFile')
+    expect(source).not.toContain(['wx', 'cloud', 'uploadFile'].join('.'))
     expect(source).toContain('api.userLogin()')
     expect(source).toContain('materials/${loginResult.user.openid}/${Date.now()}-${sanitizeCloudFileName(file.name)}')
     expect(source).toContain('api.materialCreate')

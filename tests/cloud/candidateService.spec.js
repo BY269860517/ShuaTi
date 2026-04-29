@@ -1,6 +1,8 @@
 const { createFakeDb } = require('./fakeDb')
-const { updateCandidate, listCandidates, getCandidateDetail } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/services/candidateService')
-const { confirmImport, createQuestionId } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/services/importService')
+const { sharedModule } = require('./sharedModules')
+
+const { updateCandidate, listCandidates, getCandidateDetail } = sharedModule('services/candidateService')
+const { confirmImport, createQuestionId } = sharedModule('services/importService')
 
 async function seedCandidate(db, overrides = {}) {
   const result = await db.collection('parse_candidates').add({
