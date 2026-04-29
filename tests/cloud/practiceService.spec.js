@@ -4,7 +4,7 @@ const {
   createPractice,
   getPracticeDetail,
   listQuestions,
-} = require('../../cloudfunctions/common/services/practiceService')
+} = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/services/practiceService')
 
 async function seedQuestion(db, overrides = {}) {
   const result = await db.collection('questions').add({

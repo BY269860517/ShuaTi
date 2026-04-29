@@ -1,4 +1,4 @@
-const { parseQuestions } = require('../../cloudfunctions/common/parser')
+const { parseQuestions } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/parser')
 
 describe('parseQuestions inline_answer', () => {
   it('parses a single choice question with inline answer', () => {

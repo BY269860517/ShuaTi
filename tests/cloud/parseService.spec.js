@@ -1,6 +1,6 @@
 const { createFakeDb } = require('./fakeDb')
-const { createMaterial: createStoredMaterial } = require('../../cloudfunctions/common/services/materialService')
-const { getParseStatus, runParseJob, startParse } = require('../../cloudfunctions/common/services/parseService')
+const { createMaterial: createStoredMaterial } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/services/materialService')
+const { getParseStatus, runParseJob, startParse } = require('../../uniCloud-alipay/cloudfunctions/common/shuati-shared/services/parseService')
 
 describe('parse service', () => {
   function ownedFileId(openid, name = 'a.pdf') {
