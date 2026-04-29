@@ -11,7 +11,7 @@ function normalizeAddResult(result = {}) {
 }
 
 function normalizeUpdateResult(result = {}) {
-  const updated = Number(result.updated ?? result.updatedCount ?? result.modifiedCount ?? 0)
+  const updated = Number(result.updated ?? result.updatedCount ?? result.modifiedCount ?? result.stats?.updated ?? 0)
   return { ...result, stats: { ...result.stats, updated } }
 }
 

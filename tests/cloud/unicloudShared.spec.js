@@ -225,6 +225,34 @@ describe('uniCloud shared helpers', () => {
     })
   })
 
+  it('preserves stats-only native updated count when top-level count is absent', async () => {
+    const db = createDbCompat({
+      collection() {
+        return {
+          doc() {
+            return {
+              update() {
+                return Promise.resolve({
+                  stats: {
+                    matched: 1,
+                    updated: 1,
+                  },
+                })
+              },
+            }
+          },
+        }
+      },
+    })
+
+    await expect(db.collection('materials').doc('row_1').update({ data: { status: 'ready' } })).resolves.toMatchObject({
+      stats: {
+        matched: 1,
+        updated: 1,
+      },
+    })
+  })
+
   it('uses UTF-8 default internal error response', () => {
     expect(toErrorResponse(new Error()).error.message).toBe('服务异常')
   })
