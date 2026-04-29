@@ -168,6 +168,33 @@ describe('uniCloud shared helpers', () => {
     expect(calls).toContainEqual(['where.update', { status: 'ready' }])
   })
 
+  it('preserves native update stats metadata while adding updated count', async () => {
+    const db = createDbCompat({
+      collection() {
+        return {
+          doc() {
+            return {
+              update() {
+                return Promise.resolve({
+                  updated: 1,
+                  stats: { matched: 1 },
+                })
+              },
+            }
+          },
+        }
+      },
+    })
+
+    await expect(db.collection('materials').doc('row_1').update({ data: { status: 'ready' } })).resolves.toMatchObject({
+      updated: 1,
+      stats: {
+        matched: 1,
+        updated: 1,
+      },
+    })
+  })
+
   it('uses UTF-8 default internal error response', () => {
     expect(toErrorResponse(new Error()).error.message).toBe('服务异常')
   })
