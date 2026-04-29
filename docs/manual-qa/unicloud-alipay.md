@@ -27,7 +27,7 @@ Do not paste real secrets into this document, screenshots, commits, or issue com
 
 ## HBuilderX Deployment
 
-1. Open the ShuaTi project in HBuilderX.
+1. Open `G:\HBuilderProjects\ShuaTi` in HBuilderX.
 2. Right-click `uniCloud-alipay`.
 3. Associate `uniCloud-alipay` with the target Alipay cloud service space.
 4. Upload cloud function common module `common/shuati-shared`.
