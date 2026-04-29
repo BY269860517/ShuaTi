@@ -1,12 +1,14 @@
 # PDF Import Practice MVP Manual QA
 
+> Historical note: this checklist was written for the original WeChat CloudBase MVP. It is superseded on `feature/unicloud-alipay-migration`; do not use it as current verification for this branch. Current manual verification should target `uniCloud-alipay` in HBuilderX with an Alipay cloud service space. A dedicated `docs/manual-qa/unicloud-alipay.md` checklist is planned for the migration.
+
 ## Environment
 
-- Project path: `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp`
+- Project path: this historical checklist used an older MVP worktree. For the current branch, use `G:\HBuilderProjects\ShuaTi\.worktrees\unicloud-alipay-migration`.
 - Bun path: `F:\.bun\bin\bun.exe`
-- WeChat mini program target: `mp-weixin`
-- WeChat Developer Tools import path after build: `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp\dist\build\mp-weixin`
-- CloudBase environment: use the project CloudBase environment configured in WeChat Developer Tools / uniCloud before testing. Confirm the same environment is selected for cloud function upload, database collection creation, and runtime calls.
+- Historical WeChat mini program target: `mp-weixin`
+- Current migration target: HBuilderX-associated `uniCloud-alipay` Alipay cloud service space.
+- Legacy CloudBase / WeChat Developer Tools deployment steps below no longer apply to the current branch.
 
 ## Cloud Collections
 
@@ -25,7 +27,7 @@ All collections should deny public writes. Client writes must go through cloud f
 
 ## Cloud Functions
 
-Upload and deploy these cloud functions to the selected CloudBase environment:
+Historical MVP functions were uploaded to WeChat CloudBase:
 
 - `userLogin`
 - `materialCreate`
@@ -43,7 +45,7 @@ Upload and deploy these cloud functions to the selected CloudBase environment:
 - `practiceDetail`
 - `answerSubmit`
 
-Each cloud function depends on the shared code in `cloudfunctions/common`. After running the mp-weixin build, open `dist\build\mp-weixin` in WeChat Developer Tools. The build output should contain `cloudfunctions\common`, `cloudfunctions\parseRunner`, and `project.config.json` should include `"cloudfunctionRoot": "cloudfunctions/"`. Upload cloud functions from that output directory so sibling `common` resolution matches runtime deployment.
+These legacy CloudBase deployment instructions no longer apply on `feature/unicloud-alipay-migration`. The root `cloudfunctions/` directory has been removed. Current backend code lives under `uniCloud-alipay/cloudfunctions`, and shared helpers live under `uniCloud-alipay/cloudfunctions/common/shuati-shared`. Do not expect WeChat CloudBase root-function build output when verifying the migrated branch.
 
 ## Test PDF Content
 
@@ -78,7 +80,7 @@ D. 52
 ## QA Steps
 
 1. Run `F:\.bun\bin\bun.exe run build:mp-weixin`.
-2. Open `G:\HBuilderProjects\ShuaTi\.worktrees\pdf-import-practice-mvp\dist\build\mp-weixin` in WeChat Developer Tools, select the correct CloudBase environment, confirm the output includes `cloudfunctions` and `project.config.json` has `"cloudfunctionRoot": "cloudfunctions/"`, then compile the mini program.
+2. Historical CloudBase-only step: open the old `mp-weixin` build in WeChat Developer Tools and upload root cloud functions. This step is superseded for the current branch; verify the migrated backend from HBuilderX by associating `uniCloud-alipay` with the Alipay cloud service space and deploying the functions under `uniCloud-alipay/cloudfunctions`.
 3. Launch the home page and confirm `userLogin` runs successfully. The app should create or load the current user without a visible login error.
 4. Upload the test PDF created from the content above.
 5. Confirm the created material appears with status `parsing`. The normal upload flow automatically calls `parseRunner` after `parseStart`; manually invoking `parseRunner` from the CloudBase console should only be needed for troubleshooting a stuck parse job. If troubleshooting, get the parse job `_id` from `parseStatus` / the `parse_jobs` collection and pass `{ "jobId": "..." }`.

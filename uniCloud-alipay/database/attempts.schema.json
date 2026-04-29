@@ -1,0 +1,23 @@
+{
+  "bsonType": "object",
+  "required": ["ownerOpenid", "sessionId", "questionId", "selectedKeys", "isCorrect", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false,
+    "count": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "ownerOpenid": { "bsonType": "string" },
+    "sessionId": { "bsonType": "string" },
+    "questionId": { "bsonType": "string" },
+    "selectedKeys": { "bsonType": "array" },
+    "isCorrect": { "bsonType": "bool" },
+    "answerKeys": { "bsonType": "array" },
+    "explanation": { "bsonType": "string" },
+    "createdAt": { "bsonType": "string" },
+    "updatedAt": { "bsonType": "string" }
+  }
+}

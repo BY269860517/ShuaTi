@@ -42,7 +42,8 @@ describe('pdf import frontend pages', () => {
 
     expect(source).toContain('chooseMessageFile')
     expect(source).toContain("extension: ['pdf']")
-    expect(source).toContain('wx.cloud.uploadFile')
+    expect(source).toContain('uniCloud.uploadFile')
+    expect(source).not.toContain(['wx', 'cloud', 'uploadFile'].join('.'))
     expect(source).toContain('api.userLogin()')
     expect(source).toContain('materials/${loginResult.user.openid}/${Date.now()}-${sanitizeCloudFileName(file.name)}')
     expect(source).toContain('api.materialCreate')
@@ -69,21 +70,25 @@ describe('pdf import frontend pages', () => {
   test('package scripts invoke uni through a cross-platform node wrapper', () => {
     const packageJson = JSON.parse(read('package.json')) as { scripts: Record<string, string> }
     const wrapperSource = read('scripts/uni-cli.mjs')
+    const bunWrapperSource = read('scripts/run-bun.mjs')
 
     expect(existsSync('scripts/uni-cli.mjs')).toBe(true)
+    expect(existsSync('scripts/run-bun.mjs')).toBe(true)
     expect(packageJson.scripts['dev:mp-weixin']).toBe('node scripts/uni-cli.mjs -p mp-weixin')
     expect(packageJson.scripts['build:mp-weixin']).toBe('node scripts/uni-cli.mjs build -p mp-weixin')
+    expect(packageJson.scripts.test).toBe('node scripts/run-bun.mjs test')
+    expect(packageJson.scripts['test:cloud']).toBe('node scripts/run-bun.mjs test tests/cloud')
     expect(wrapperSource).toContain("process.env.UNI_INPUT_DIR || '.'")
     expect(wrapperSource).toContain('@dcloudio')
     expect(wrapperSource).toContain('vite-plugin-uni')
     expect(wrapperSource).toContain('spawn')
-    expect(wrapperSource).toContain('syncCloudfunctionsOutput')
-    expect(wrapperSource).toContain('copyCloudfunctions')
-    expect(wrapperSource).toContain('vendorCommonIntoFunctionPackages')
-    expect(wrapperSource).toContain("require('./common")
-    expect(wrapperSource).toContain('patchProjectConfig')
-    expect(wrapperSource).toContain('cloudfunctionRoot')
-    expect(wrapperSource).toContain("dist', 'build', 'mp-weixin', 'cloudfunctions")
+    expect(wrapperSource).toContain('runUniCli(args)')
+    expect(bunWrapperSource).toContain("F:\\\\.bun\\\\bin\\\\bun.exe")
+    expect(bunWrapperSource).toContain('BUN_EXE')
+    expect(wrapperSource).not.toContain('syncCloudfunctionsOutput')
+    expect(wrapperSource).not.toContain('copyCloudfunctions')
+    expect(wrapperSource).not.toContain('vendorCommonIntoFunctionPackages')
+    expect(wrapperSource).not.toContain('cloudfunctionRoot')
   })
 
   test('material detail page loads detail, polls parse status, and links review/practice', () => {

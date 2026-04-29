@@ -1,0 +1,27 @@
+{
+  "bsonType": "object",
+  "required": ["ownerOpenid", "fileID", "fileName", "status", "parseMode", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false,
+    "count": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "ownerOpenid": { "bsonType": "string" },
+    "fileID": { "bsonType": "string" },
+    "fileName": { "bsonType": "string" },
+    "fileSize": { "bsonType": "number" },
+    "status": { "bsonType": "string" },
+    "parseMode": { "bsonType": "string" },
+    "questionCount": { "bsonType": "number" },
+    "readyCandidateCount": { "bsonType": "number" },
+    "needReviewCandidateCount": { "bsonType": "number" },
+    "invalidCandidateCount": { "bsonType": "number" },
+    "errorMessage": { "bsonType": "string" },
+    "createdAt": { "bsonType": "string" },
+    "updatedAt": { "bsonType": "string" }
+  }
+}

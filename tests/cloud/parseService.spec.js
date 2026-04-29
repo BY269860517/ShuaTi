@@ -1,6 +1,8 @@
 const { createFakeDb } = require('./fakeDb')
-const { createMaterial: createStoredMaterial } = require('../../cloudfunctions/common/services/materialService')
-const { getParseStatus, runParseJob, startParse } = require('../../cloudfunctions/common/services/parseService')
+const { sharedModule } = require('./sharedModules')
+
+const { createMaterial: createStoredMaterial } = sharedModule('services/materialService')
+const { getParseStatus, runParseJob, startParse } = sharedModule('services/parseService')
 
 describe('parse service', () => {
   function ownedFileId(openid, name = 'a.pdf') {

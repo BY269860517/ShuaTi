@@ -1,0 +1,16 @@
+{
+  "indexes": [
+    {
+      "IndexName": "username_unique",
+      "MgoKeySchema": {
+        "MgoIndexKeys": [
+          {
+            "Name": "username",
+            "Direction": "1"
+          }
+        ],
+        "MgoIsUnique": true
+      }
+    }
+  ]
+}

@@ -18,6 +18,7 @@ export interface OptionItem {
 export interface UserInfo {
   _id: string
   openid: string
+  uid?: string
   createdAt: string
   updatedAt: string
   created?: boolean

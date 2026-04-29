@@ -1,0 +1,8 @@
+{
+  "name": "candidate-update",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "shuati-shared": "file:../common/shuati-shared"
+  }
+}

@@ -75,7 +75,7 @@ async function submitUpload() {
 
   try {
     const loginResult = await api.userLogin()
-    const uploadResult = await wx.cloud.uploadFile({
+    const uploadResult = await uniCloud.uploadFile({
       cloudPath: `materials/${loginResult.user.openid}/${Date.now()}-${sanitizeCloudFileName(file.name)}`,
       filePath: file.path,
     }) as UploadResult
