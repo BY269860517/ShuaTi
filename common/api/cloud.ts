@@ -11,10 +11,24 @@ import type {
   UserInfo,
 } from '../types'
 
-interface WxRuntime {
-  cloud: {
-    callFunction<T = unknown>(options: { name: string; data?: object }): Promise<{ result?: T }>
-  }
+interface UniCloudRuntime {
+  callFunction<T = unknown>(options: { name: string; data?: object }): Promise<{ result?: T }>
+}
+
+interface UniRuntime {
+  login(options: {
+    provider: 'weixin'
+    success: (result: { code?: string }) => void
+    fail: (error: unknown) => void
+  }): void
+  getStorageSync(key: string): unknown
+  setStorageSync(key: string, value: unknown): void
+}
+
+interface LoginData {
+  token?: string
+  tokenExpired?: number
+  user: UserInfo
 }
 
 interface CloudFunctionResponse<T> {
@@ -55,7 +69,8 @@ export interface AnswerSubmitInput {
 }
 
 export async function callFunction<T>(name: string, data: object = {}): Promise<T> {
-  const response = await getWxRuntime().cloud.callFunction({ name, data }) as CloudFunctionResult<T>
+  const requestData = name === 'userLogin' ? data : attachToken(data)
+  const response = await getUniCloudRuntime().callFunction({ name, data: requestData }) as CloudFunctionResult<T>
   const result = response.result
 
   if (!isCloudFunctionResponse(result)) {
@@ -71,8 +86,57 @@ export async function callFunction<T>(name: string, data: object = {}): Promise<
   return result.data as T
 }
 
-function getWxRuntime(): WxRuntime {
-  return (globalThis as { wx?: WxRuntime }).wx as WxRuntime
+function getUniCloudRuntime(): UniCloudRuntime {
+  const runtime = (globalThis as { uniCloud?: UniCloudRuntime }).uniCloud
+  if (!runtime?.callFunction) throwCloudError('missing_unicloud', 'uniCloud runtime is unavailable')
+  return runtime
+}
+
+function getUniRuntime(): UniRuntime {
+  const runtime = (globalThis as { uni?: UniRuntime }).uni
+  if (!runtime?.login) throwCloudError('missing_uni', 'uni runtime is unavailable')
+  return runtime
+}
+
+function getStoredToken(): string {
+  try {
+    const token = getUniRuntime().getStorageSync('uni_id_token')
+    return typeof token === 'string' ? token : ''
+  } catch (_) {
+    return ''
+  }
+}
+
+function attachToken(data: object): object {
+  const token = getStoredToken()
+  if (!token) return data
+  return { ...data, _uniToken: token, uniToken: token }
+}
+
+function storeLoginData(data: LoginData): void {
+  if (!data?.token) return
+  const runtime = getUniRuntime()
+  runtime.setStorageSync('uni_id_token', data.token)
+  if (data.tokenExpired) {
+    runtime.setStorageSync('uni_id_token_expired', data.tokenExpired)
+  }
+}
+
+function loginByWeixin(): Promise<{ code: string }> {
+  return new Promise((resolve, reject) => {
+    getUniRuntime().login({
+      provider: 'weixin',
+      success(result) {
+        const code = result?.code
+        if (!code) {
+          reject(Object.assign(new Error('missing weixin login code'), { code: 'missing_login_code' }))
+          return
+        }
+        resolve({ code })
+      },
+      fail: reject,
+    })
+  })
 }
 
 function isCloudFunctionResponse<T>(value: unknown): value is CloudFunctionResponse<T> {
@@ -87,7 +151,12 @@ function throwCloudError(code: string, message: string): never {
 }
 
 export const api = {
-  userLogin: () => callFunction<{ user: UserInfo }>('userLogin'),
+  userLogin: async () => {
+    const { code } = await loginByWeixin()
+    const data = await callFunction<LoginData>('userLogin', { code })
+    storeLoginData(data)
+    return { user: data.user }
+  },
   materialCreate: (data: MaterialCreateInput) => callFunction<{ material: CreatedMaterial }>('materialCreate', data),
   materialList: () => callFunction<{ materials: Material[] }>('materialList'),
   materialDetail: (materialId: string) => callFunction<{ material: Material }>('materialDetail', { materialId }),
