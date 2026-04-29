@@ -27,7 +27,8 @@ Do not paste real secrets into this document, screenshots, commits, or issue com
 
 ## HBuilderX Deployment
 
-1. Open `G:\HBuilderProjects\ShuaTi` in HBuilderX.
+1. For validating this migration branch before merge, open `G:\HBuilderProjects\ShuaTi\.worktrees\unicloud-alipay-migration` in HBuilderX.
+   After the branch is merged or applied back to the main checkout, `G:\HBuilderProjects\ShuaTi` is the normal project path.
 2. Right-click `uniCloud-alipay`.
 3. Associate `uniCloud-alipay` with the target Alipay cloud service space.
 4. Upload cloud function common module `common/shuati-shared`.
@@ -59,16 +60,16 @@ Do not paste real secrets into this document, screenshots, commits, or issue com
 F:\.bun\bin\bun.exe run build:mp-weixin
 ```
 
-2. Open this build output in WeChat DevTools:
-
-```text
-G:\HBuilderProjects\ShuaTi\dist\build\mp-weixin
-```
-
-If you are verifying from the migration worktree directly, use the equivalent worktree output:
+2. Open the build output from the same checkout being validated. For this migration worktree, open:
 
 ```text
 G:\HBuilderProjects\ShuaTi\.worktrees\unicloud-alipay-migration\dist\build\mp-weixin
+```
+
+After the branch is merged or applied back to the main checkout, use the normal checkout output:
+
+```text
+G:\HBuilderProjects\ShuaTi\dist\build\mp-weixin
 ```
 
 3. Confirm the DevTools console does not show the legacy error:
