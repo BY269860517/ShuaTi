@@ -1,0 +1,19 @@
+{
+  "bsonType": "object",
+  "required": ["jobId", "materialId", "ownerOpenid", "pageNo", "text", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "jobId": { "bsonType": "string" },
+    "materialId": { "bsonType": "string" },
+    "ownerOpenid": { "bsonType": "string" },
+    "pageNo": { "bsonType": "number" },
+    "text": { "bsonType": "string" },
+    "createdAt": { "bsonType": "string" }
+  }
+}

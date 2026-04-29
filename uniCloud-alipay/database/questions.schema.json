@@ -1,0 +1,26 @@
+{
+  "bsonType": "object",
+  "required": ["ownerOpenid", "materialId", "candidateId", "type", "stem", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "ownerOpenid": { "bsonType": "string" },
+    "materialId": { "bsonType": "string" },
+    "candidateId": { "bsonType": "string" },
+    "type": { "bsonType": "string" },
+    "stem": { "bsonType": "string" },
+    "options": { "bsonType": "array" },
+    "answerKeys": { "bsonType": "array" },
+    "explanation": { "bsonType": "string" },
+    "questionNo": { "bsonType": "number" },
+    "sourcePageNo": { "bsonType": "number" },
+    "sourceCandidateUpdatedAt": { "bsonType": "string" },
+    "createdAt": { "bsonType": "string" },
+    "updatedAt": { "bsonType": "string" }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "bsonType": "object",
+  "required": ["openid", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "openid": { "bsonType": "string" },
+    "createdAt": { "bsonType": "string" },
+    "updatedAt": { "bsonType": "string" }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "bsonType": "object",
+  "required": ["ownerOpenid", "materialId", "questionIds", "status", "totalCount", "correctCount", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "ownerOpenid": { "bsonType": "string" },
+    "materialId": { "bsonType": "string" },
+    "questionIds": { "bsonType": "array" },
+    "status": { "bsonType": "string" },
+    "totalCount": { "bsonType": "number" },
+    "correctCount": { "bsonType": "number" },
+    "startedAt": { "bsonType": "string" },
+    "submittedAt": { "bsonType": "string" },
+    "createdAt": { "bsonType": "string" },
+    "updatedAt": { "bsonType": "string" }
+  }
+}

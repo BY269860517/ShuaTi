@@ -1,0 +1,32 @@
+{
+  "bsonType": "object",
+  "required": ["jobId", "materialId", "ownerOpenid", "type", "stem", "status", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "jobId": { "bsonType": "string" },
+    "materialId": { "bsonType": "string" },
+    "ownerOpenid": { "bsonType": "string" },
+    "questionNo": { "bsonType": "number" },
+    "type": { "bsonType": "string" },
+    "stem": { "bsonType": "string" },
+    "options": { "bsonType": "array" },
+    "answerKeys": { "bsonType": "array" },
+    "explanation": { "bsonType": "string" },
+    "status": { "bsonType": "string" },
+    "validationErrors": { "bsonType": "array" },
+    "importedQuestionId": { "bsonType": "string" },
+    "sourcePageNo": { "bsonType": "number" },
+    "sourceText": { "bsonType": "string" },
+    "createdAt": { "bsonType": "string" },
+    "updatedAt": { "bsonType": "string" },
+    "importClaimToken": { "bsonType": "string" },
+    "importSourceUpdatedAt": { "bsonType": "string" },
+    "importClaimUntil": { "bsonType": "string" }
+  }
+}
