@@ -120,3 +120,12 @@ Expected results:
 - Build succeeds.
 - `Test-Path dist\build\mp-weixin\cloudfunctions` returns `False`.
 - The `rg` scan returns no matches.
+
+## Verification Record
+
+Implementation verification results recorded for `feature/unicloud-alipay-migration`. These results do not replace manual HBuilderX cloud service space verification.
+
+- `F:\.bun\bin\bun.exe test`: passed, 164 pass, 0 fail.
+- `F:\.bun\bin\bun.exe run build:mp-weixin`: passed, with existing Node circular dependency and Sass legacy API warnings.
+- `Test-Path dist\build\mp-weixin\cloudfunctions`: `False`.
+- `rg "wx-server-sdk|wx\.cloud|cloud\.getWXContext|DYNAMIC_CURRENT_ENV" -n App.vue common pages scripts tests uniCloud-alipay`: no matches.
