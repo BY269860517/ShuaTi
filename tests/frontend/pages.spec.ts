@@ -42,7 +42,8 @@ describe('pdf import frontend pages', () => {
 
     expect(source).toContain('chooseMessageFile')
     expect(source).toContain("extension: ['pdf']")
-    expect(source).toContain('wx.cloud.uploadFile')
+    expect(source).toContain('uniCloud.uploadFile')
+    expect(source).not.toContain('wx.cloud.uploadFile')
     expect(source).toContain('api.userLogin()')
     expect(source).toContain('materials/${loginResult.user.openid}/${Date.now()}-${sanitizeCloudFileName(file.name)}')
     expect(source).toContain('api.materialCreate')
@@ -77,13 +78,11 @@ describe('pdf import frontend pages', () => {
     expect(wrapperSource).toContain('@dcloudio')
     expect(wrapperSource).toContain('vite-plugin-uni')
     expect(wrapperSource).toContain('spawn')
-    expect(wrapperSource).toContain('syncCloudfunctionsOutput')
-    expect(wrapperSource).toContain('copyCloudfunctions')
-    expect(wrapperSource).toContain('vendorCommonIntoFunctionPackages')
-    expect(wrapperSource).toContain("require('./common")
-    expect(wrapperSource).toContain('patchProjectConfig')
-    expect(wrapperSource).toContain('cloudfunctionRoot')
-    expect(wrapperSource).toContain("dist', 'build', 'mp-weixin', 'cloudfunctions")
+    expect(wrapperSource).toContain('runUniCli(args)')
+    expect(wrapperSource).not.toContain('syncCloudfunctionsOutput')
+    expect(wrapperSource).not.toContain('copyCloudfunctions')
+    expect(wrapperSource).not.toContain('vendorCommonIntoFunctionPackages')
+    expect(wrapperSource).not.toContain('cloudfunctionRoot')
   })
 
   test('material detail page loads detail, polls parse status, and links review/practice', () => {

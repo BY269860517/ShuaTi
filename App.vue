@@ -1,12 +1,4 @@
 <script setup lang="ts">
-import { onLaunch } from '@dcloudio/uni-app'
-
-onLaunch(() => {
-  const wxRuntime = typeof wx !== 'undefined' ? wx : null
-  if (wxRuntime?.cloud) {
-    wxRuntime.cloud.init({ traceUser: true })
-  }
-})
 </script>
 
 <style lang="scss">
