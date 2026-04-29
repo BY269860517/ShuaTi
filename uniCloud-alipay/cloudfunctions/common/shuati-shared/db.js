@@ -13,7 +13,7 @@ function normalizeAddResult(result = {}) {
 function normalizeUpdateResult(result = {}) {
   if (result.stats && typeof result.stats.updated === 'number') return result
   const updated = Number(result.updated ?? result.updatedCount ?? result.modifiedCount ?? 0)
-  return { stats: { updated } }
+  return { ...result, stats: { updated } }
 }
 
 function wrapQuery(query) {
