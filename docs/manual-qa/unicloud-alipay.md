@@ -31,9 +31,12 @@ Do not paste real secrets into this document, screenshots, commits, or issue com
    After the branch is merged or applied back to the main checkout, `G:\HBuilderProjects\ShuaTi` is the normal project path.
 2. Right-click `uniCloud-alipay`.
 3. Associate `uniCloud-alipay` with the target Alipay cloud service space.
-4. Upload cloud function common module `common/shuati-shared`.
-5. Upload cloud function common module `common/uni-config-center`.
-6. Upload every business cloud function under `uniCloud-alipay/cloudfunctions`:
+4. Upload cloud function common module `common/uni-config-center`.
+5. Upload cloud function common module `common/uni-open-bridge-common`.
+6. Upload cloud function common module `common/uni-id`.
+7. Upload cloud function common module `common/shuati-shared`.
+8. Confirm each business cloud function has its committed `package.json` dependencies before upload. HBuilderX uses those files to link `shuati-shared` and `uni-id`.
+9. Upload every business cloud function under `uniCloud-alipay/cloudfunctions`:
    - `userLogin`
    - `materialCreate`
    - `materialList`
@@ -49,8 +52,8 @@ Do not paste real secrets into this document, screenshots, commits, or issue com
    - `practiceCreate`
    - `practiceDetail`
    - `answerSubmit`
-7. Initialize or synchronize all database schemas under `uniCloud-alipay/database`.
-8. Confirm the cloud space has the business collections and the `uni-id-users` index initialized before running the mini program.
+10. Initialize or synchronize all database schemas under `uniCloud-alipay/database`.
+11. Confirm the cloud space has the business collections and the `uni-id-users` index initialized before running the mini program.
 
 ## WeChat DevTools Verification
 
@@ -126,7 +129,7 @@ Expected results:
 
 Implementation verification results recorded for `feature/unicloud-alipay-migration`. These results do not replace manual HBuilderX cloud service space verification.
 
-- `F:\.bun\bin\bun.exe test`: passed, 164 pass, 0 fail.
-- `F:\.bun\bin\bun.exe run build:mp-weixin`: passed, with existing Node circular dependency and Sass legacy API warnings.
+- `npm.cmd test`: passed, 181 pass, 0 fail.
+- `npm.cmd run build:mp-weixin`: passed, with existing Node circular dependency and Sass legacy API warnings.
 - `Test-Path dist\build\mp-weixin\cloudfunctions`: `False`.
 - `rg "wx-server-sdk|wx\.cloud|cloud\.getWXContext|DYNAMIC_CURRENT_ENV" -n App.vue common pages scripts tests uniCloud-alipay`: no matches.

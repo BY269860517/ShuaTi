@@ -33,11 +33,37 @@ describe('uniCloud function wrappers', () => {
       expect(source).not.toContain(legacySdkPackage)
       expect(source).not.toContain(legacyContextCall)
     })
+
+    it(`${name} declares its shared module dependency for HBuilderX upload`, () => {
+      const filePath = path.join('uniCloud-alipay', 'cloudfunctions', name, 'package.json')
+      expect(existsSync(filePath)).toBe(true)
+      const packageJson = JSON.parse(readFileSync(filePath, 'utf8'))
+      expect(packageJson.dependencies['shuati-shared']).toBe('file:../common/shuati-shared')
+      expect(packageJson.dependencies[legacySdkPackage]).toBeUndefined()
+    })
   }
 
   it('parseRunner declares pdf-parse without legacy sdk', () => {
     const packageJson = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/parseRunner/package.json', 'utf8'))
     expect(packageJson.dependencies['pdf-parse']).toBe('latest')
     expect(packageJson.dependencies[legacySdkPackage]).toBeUndefined()
+  })
+
+  it('userLogin declares uni-id common module dependency', () => {
+    const packageJson = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/userLogin/package.json', 'utf8'))
+    expect(packageJson.dependencies['uni-id']).toBe('file:../common/uni-id')
+  })
+
+  it('vendors old uni-id common modules required by loginByWeixin', () => {
+    const uniIdPackage = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/common/uni-id/package.json', 'utf8'))
+    const bridgePackage = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/common/uni-open-bridge-common/package.json', 'utf8'))
+
+    expect(existsSync('uniCloud-alipay/cloudfunctions/common/uni-id/index.js')).toBe(true)
+    expect(existsSync('uniCloud-alipay/cloudfunctions/common/uni-open-bridge-common/index.js')).toBe(true)
+    expect(uniIdPackage.name).toBe('uni-id')
+    expect(uniIdPackage.dependencies['uni-config-center']).toBe('file:../uni-config-center')
+    expect(uniIdPackage.dependencies['uni-open-bridge-common']).toBe('file:../uni-open-bridge-common')
+    expect(bridgePackage.name).toBe('uni-open-bridge-common')
+    expect(bridgePackage.dependencies['uni-config-center']).toBe('file:../uni-config-center')
   })
 })

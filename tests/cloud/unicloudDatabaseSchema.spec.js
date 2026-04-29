@@ -48,6 +48,13 @@ describe('uniCloud database schemas', () => {
     expectNumberOrNull(questions.properties.sourcePageNo)
   })
 
+  it('declares question numbers as strings written by parser and import services', () => {
+    const parseCandidates = readSchema('parse_candidates')
+    const questions = readSchema('questions')
+    expect(parseCandidates.properties.questionNo).toEqual({ bsonType: 'string' })
+    expect(questions.properties.questionNo).toEqual({ bsonType: 'string' })
+  })
+
   it('declares question import claim token written during imports', () => {
     const questions = readSchema('questions')
     expect(questions.properties.importClaimToken).toEqual({ bsonType: 'string' })

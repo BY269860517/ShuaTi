@@ -13,7 +13,7 @@
     "jobId": { "bsonType": "string" },
     "materialId": { "bsonType": "string" },
     "ownerOpenid": { "bsonType": "string" },
-    "questionNo": { "bsonType": "number" },
+    "questionNo": { "bsonType": "string" },
     "type": { "bsonType": "string" },
     "stem": { "bsonType": "string" },
     "options": { "bsonType": "array" },
