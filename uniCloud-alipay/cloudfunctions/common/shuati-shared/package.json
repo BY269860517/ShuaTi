@@ -1,5 +1,8 @@
 {
   "name": "shuati-shared",
   "version": "1.0.0",
-  "main": "index.js"
+  "main": "index.js",
+  "dependencies": {
+    "uni-id-common": "file:../uni-id-common"
+  }
 }

@@ -55,9 +55,12 @@ describe('uniCloud function wrappers', () => {
   })
 
   it('vendors old uni-id common modules required by loginByWeixin', () => {
+    const configCenterPackage = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/common/uni-config-center/package.json', 'utf8'))
     const uniIdPackage = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/common/uni-id/package.json', 'utf8'))
     const bridgePackage = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/common/uni-open-bridge-common/package.json', 'utf8'))
 
+    expect(existsSync('uniCloud-alipay/cloudfunctions/common/uni-config-center/index.js')).toBe(true)
+    expect(configCenterPackage.name).toBe('uni-config-center')
     expect(existsSync('uniCloud-alipay/cloudfunctions/common/uni-id/index.js')).toBe(true)
     expect(existsSync('uniCloud-alipay/cloudfunctions/common/uni-open-bridge-common/index.js')).toBe(true)
     expect(uniIdPackage.name).toBe('uni-id')
@@ -65,5 +68,15 @@ describe('uniCloud function wrappers', () => {
     expect(uniIdPackage.dependencies['uni-open-bridge-common']).toBe('file:../uni-open-bridge-common')
     expect(bridgePackage.name).toBe('uni-open-bridge-common')
     expect(bridgePackage.dependencies['uni-config-center']).toBe('file:../uni-config-center')
+  })
+
+  it('vendors uni-id-common required by token-authenticated business functions', () => {
+    const sharedPackage = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/common/shuati-shared/package.json', 'utf8'))
+    const uniIdCommonPackage = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/common/uni-id-common/package.json', 'utf8'))
+
+    expect(existsSync('uniCloud-alipay/cloudfunctions/common/uni-id-common/index.js')).toBe(true)
+    expect(sharedPackage.dependencies['uni-id-common']).toBe('file:../uni-id-common')
+    expect(uniIdCommonPackage.name).toBe('uni-id-common')
+    expect(uniIdCommonPackage.dependencies['uni-config-center']).toBe('file:../uni-config-center')
   })
 })

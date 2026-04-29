@@ -33,10 +33,12 @@ Do not paste real secrets into this document, screenshots, commits, or issue com
 3. Associate `uniCloud-alipay` with the target Alipay cloud service space.
 4. Upload cloud function common module `common/uni-config-center`.
 5. Upload cloud function common module `common/uni-open-bridge-common`.
-6. Upload cloud function common module `common/uni-id`.
-7. Upload cloud function common module `common/shuati-shared`.
-8. Confirm each business cloud function has its committed `package.json` dependencies before upload. HBuilderX uses those files to link `shuati-shared` and `uni-id`.
-9. Upload every business cloud function under `uniCloud-alipay/cloudfunctions`:
+6. Upload cloud function common module `common/uni-id-common`.
+7. Upload cloud function common module `common/uni-id`.
+8. Upload cloud function common module `common/shuati-shared`.
+9. Confirm each common module has its committed `package.json` and `index.js` before upload.
+10. Confirm each business cloud function has its committed `package.json` dependencies before upload. HBuilderX uses those files to link `shuati-shared`, `uni-id-common`, and `uni-id`.
+11. Upload every business cloud function under `uniCloud-alipay/cloudfunctions`:
    - `userLogin`
    - `materialCreate`
    - `materialList`
@@ -52,8 +54,8 @@ Do not paste real secrets into this document, screenshots, commits, or issue com
    - `practiceCreate`
    - `practiceDetail`
    - `answerSubmit`
-10. Initialize or synchronize all database schemas under `uniCloud-alipay/database`.
-11. Confirm the cloud space has the business collections and the `uni-id-users` index initialized before running the mini program.
+12. Initialize or synchronize all database schemas under `uniCloud-alipay/database`.
+13. Confirm the cloud space has the business collections and the `uni-id-users` index initialized before running the mini program.
 
 ## WeChat DevTools Verification
 
@@ -129,7 +131,7 @@ Expected results:
 
 Implementation verification results recorded for `feature/unicloud-alipay-migration`. These results do not replace manual HBuilderX cloud service space verification.
 
-- `npm.cmd test`: passed, 181 pass, 0 fail.
+- `npm.cmd test`: passed, 182 pass, 0 fail.
 - `npm.cmd run build:mp-weixin`: passed, with existing Node circular dependency and Sass legacy API warnings.
 - `Test-Path dist\build\mp-weixin\cloudfunctions`: `False`.
 - `rg "wx-server-sdk|wx\.cloud|cloud\.getWXContext|DYNAMIC_CURRENT_ENV" -n App.vue common pages scripts tests uniCloud-alipay`: no matches.
