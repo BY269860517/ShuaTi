@@ -5,7 +5,8 @@
     "read": false,
     "create": false,
     "update": false,
-    "delete": false
+    "delete": false,
+    "count": false
   },
   "properties": {
     "_id": { "bsonType": "string" },
@@ -16,6 +17,7 @@
     "isCorrect": { "bsonType": "bool" },
     "answerKeys": { "bsonType": "array" },
     "explanation": { "bsonType": "string" },
-    "createdAt": { "bsonType": "string" }
+    "createdAt": { "bsonType": "string" },
+    "updatedAt": { "bsonType": "string" }
   }
 }

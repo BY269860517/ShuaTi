@@ -5,7 +5,8 @@
     "read": false,
     "create": false,
     "update": false,
-    "delete": false
+    "delete": false,
+    "count": false
   },
   "properties": {
     "_id": { "bsonType": "string" },
@@ -21,7 +22,7 @@
     "status": { "bsonType": "string" },
     "validationErrors": { "bsonType": "array" },
     "importedQuestionId": { "bsonType": "string" },
-    "sourcePageNo": { "bsonType": "number" },
+    "sourcePageNo": { "bsonType": ["number", "null"] },
     "sourceText": { "bsonType": "string" },
     "createdAt": { "bsonType": "string" },
     "updatedAt": { "bsonType": "string" },

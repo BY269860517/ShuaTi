@@ -5,7 +5,8 @@
     "read": false,
     "create": false,
     "update": false,
-    "delete": false
+    "delete": false,
+    "count": false
   },
   "properties": {
     "_id": { "bsonType": "string" },
