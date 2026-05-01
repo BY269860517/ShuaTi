@@ -22,6 +22,7 @@
     "status": { "bsonType": "string" },
     "validationErrors": { "bsonType": "array" },
     "importedQuestionId": { "bsonType": "string" },
+    "deletedAt": { "bsonType": "string" },
     "sourcePageNo": { "bsonType": ["number", "null"] },
     "sourceText": { "bsonType": "string" },
     "createdAt": { "bsonType": "string" },

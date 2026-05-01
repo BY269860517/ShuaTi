@@ -16,6 +16,8 @@ const materialId = ref('')
 const candidates = ref<Candidate[]>([])
 const loading = ref(false)
 const confirming = ref(false)
+const removingId = ref('')
+const removeConfirmingId = ref('')
 const errorMessage = ref('')
 const didLoad = ref(false)
 
@@ -70,7 +72,13 @@ async function loadCandidates() {
 }
 
 async function confirmImport() {
-  if (!materialId.value || confirming.value || importableCount.value === 0) return
+  if (
+    !materialId.value
+    || confirming.value
+    || removingId.value
+    || removeConfirmingId.value
+    || importableCount.value === 0
+  ) return
 
   confirming.value = true
   errorMessage.value = ''
@@ -86,6 +94,54 @@ async function confirmImport() {
     errorMessage.value = error instanceof Error ? error.message : '导入失败，请重试'
   } finally {
     confirming.value = false
+  }
+}
+
+function showRemoveConfirm(): Promise<boolean> {
+  return new Promise((resolve) => {
+    uni.showModal({
+      title: '移除此候选题',
+      content: '移除后不会导入题库，也不会影响原 PDF。后续可重新上传 PDF 再解析。',
+      confirmText: '移除',
+      confirmColor: '#d93025',
+      cancelText: '取消',
+      success(result) {
+        resolve(Boolean(result.confirm))
+      },
+      fail() {
+        resolve(false)
+      },
+    })
+  })
+}
+
+async function confirmRemoveCandidate(candidateId: string) {
+  if (removingId.value || removeConfirmingId.value || confirming.value) return
+  const candidate = candidates.value.find((item) => item._id === candidateId)
+  if (!candidate || candidate.status === 'imported' || candidate.status === 'importing') return
+
+  removeConfirmingId.value = candidateId
+  let confirmed = false
+  try {
+    confirmed = await showRemoveConfirm()
+  } finally {
+    removeConfirmingId.value = ''
+  }
+  if (!confirmed) return
+  if (removingId.value || confirming.value) return
+
+  removingId.value = candidateId
+  errorMessage.value = ''
+
+  try {
+    await api.candidateDelete(candidateId)
+    candidates.value = candidates.value.filter((item) => item._id !== candidateId)
+    uni.showToast({ title: '已移除候选题', icon: 'none' })
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '移除失败，请重试'
+    uni.showToast({ title: errorMessage.value, icon: 'none' })
+  } finally {
+    removingId.value = ''
   }
 }
 
@@ -124,6 +180,7 @@ function statusType(status: CandidateStatus): 'neutral' | 'success' | 'warning' 
             :key="candidate._id"
             :candidate="candidate"
             @edit="editCandidate"
+            @remove="confirmRemoveCandidate"
           />
         </view>
       </view>
@@ -134,7 +191,7 @@ function statusType(status: CandidateStatus): 'neutral' | 'success' | 'warning' 
         class="bottom-actions__button"
         type="default"
         :loading="confirming"
-        :disabled="confirming || !candidates.length || importableCount === 0"
+        :disabled="confirming || Boolean(removingId) || Boolean(removeConfirmingId) || !candidates.length || importableCount === 0"
         @click="confirmImport"
       >
         {{ importButtonText }}

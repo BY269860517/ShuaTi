@@ -6,6 +6,10 @@ import type {
   ParseJob,
   ParseMode,
   PracticeDetail,
+  PracticeCountMode,
+  PracticeOrderMode,
+  PracticeQuestionTypeFilter,
+  PracticeScope,
   PracticeSession,
   SafeQuestion,
   UserInfo,
@@ -61,7 +65,11 @@ export type CandidateUpdateInput = Partial<Pick<Candidate, 'type' | 'stem' | 'op
 
 export interface PracticeCreateInput {
   materialId?: string
-  count: number
+  count?: number
+  countMode?: PracticeCountMode
+  orderMode?: PracticeOrderMode
+  scope?: PracticeScope
+  questionType?: PracticeQuestionTypeFilter
 }
 
 export interface WrongListInput {
@@ -184,6 +192,7 @@ export const api = {
   candidateDetail: (candidateId: string) => callFunction<{ candidate: Candidate }>('candidateDetail', { candidateId }),
   candidateUpdate: (candidateId: string, candidate: CandidateUpdateInput) =>
     callFunction<{ candidate: Candidate }>('candidateUpdate', { candidateId, candidate }),
+  candidateDelete: (candidateId: string) => callFunction<{ candidate: Candidate }>('candidateDelete', { candidateId }),
   importConfirm: (materialId: string) => callFunction<{ importedCount: number; skippedCount: number }>('importConfirm', { materialId }),
   questionList: (materialId?: string) => callFunction<{ questions: SafeQuestion[] }>('questionList', { materialId }),
   practiceCreate: (data: PracticeCreateInput) => callFunction<{ session: PracticeSession }>('practiceCreate', data),

@@ -1,5 +1,14 @@
 import { describe, expect, test } from 'vitest'
-import type { Candidate, PracticeSession, SafeQuestion, WrongQuestionItem } from '../../common/types'
+import type {
+  Candidate,
+  PracticeCountMode,
+  PracticeOrderMode,
+  PracticeQuestionTypeFilter,
+  PracticeScope,
+  PracticeSession,
+  SafeQuestion,
+  WrongQuestionItem,
+} from '../../common/types'
 
 describe('frontend shared types', () => {
   test('question numbers match backend string values', () => {
@@ -40,5 +49,27 @@ describe('frontend shared types', () => {
     }
 
     expect(session.mode).toBe('wrong')
+  })
+
+  test('practice session exposes setup choices', () => {
+    const countMode: PracticeCountMode = 'custom'
+    const orderMode: PracticeOrderMode = 'random'
+    const scope: PracticeScope = 'unattempted'
+    const questionType: PracticeQuestionTypeFilter = 'judge'
+    const session: Pick<PracticeSession, 'countMode' | 'requestedCount' | 'orderMode' | 'scope' | 'questionType'> = {
+      countMode,
+      requestedCount: 8,
+      orderMode,
+      scope,
+      questionType,
+    }
+
+    expect(session).toEqual({
+      countMode: 'custom',
+      requestedCount: 8,
+      orderMode: 'random',
+      scope: 'unattempted',
+      questionType: 'judge',
+    })
   })
 })

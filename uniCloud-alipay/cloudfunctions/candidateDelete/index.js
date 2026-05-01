@@ -1,26 +1,20 @@
 const { createDbCompat } = require('shuati-shared/db')
 const { requireUidFromEvent } = require('shuati-shared/auth')
 const { ok, toErrorResponse } = require('shuati-shared/response')
-const { createPractice } = require('shuati-shared/services/practiceService')
+const { deleteCandidate } = require('shuati-shared/services/candidateService')
 
 exports.main = async (event = {}, context = {}) => {
   const db = createDbCompat(uniCloud.database())
   const now = new Date().toISOString()
   try {
     const { uid } = await requireUidFromEvent({ event, context })
-    const session = await createPractice({
+    const candidate = await deleteCandidate({
       db,
       openid: uid,
-      materialId: event.materialId,
-      count: event.count,
-      requestedCount: event.requestedCount,
-      countMode: event.countMode,
-      orderMode: event.orderMode,
-      scope: event.scope,
-      questionType: event.questionType,
+      candidateId: event.candidateId,
       now,
     })
-    return ok({ session })
+    return ok({ candidate })
   } catch (error) {
     return toErrorResponse(error)
   }

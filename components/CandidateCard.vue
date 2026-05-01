@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Candidate } from '@/common/types'
 import { CANDIDATE_STATUS_TEXT } from '@/common/constants/status'
 import StatusBadge from './StatusBadge.vue'
 
 const props = defineProps<{ candidate: Candidate }>()
-const emit = defineEmits<{ edit: [id: string] }>()
+const emit = defineEmits<{ edit: [id: string]; remove: [id: string] }>()
+const canEdit = computed(() => props.candidate.status !== 'imported' && props.candidate.status !== 'importing')
+const canRemove = computed(() => props.candidate.status !== 'imported' && props.candidate.status !== 'importing')
 
 function statusType(status: Candidate['status']): 'neutral' | 'success' | 'warning' | 'danger' {
   if (status === 'ready' || status === 'imported') return 'success'
@@ -14,8 +17,13 @@ function statusType(status: Candidate['status']): 'neutral' | 'success' | 'warni
 }
 
 function handleEdit() {
-  if (props.candidate.status === 'imported') return
+  if (!canEdit.value) return
   emit('edit', props.candidate._id)
+}
+
+function handleRemove() {
+  if (!canRemove.value) return
+  emit('remove', props.candidate._id)
 }
 </script>
 
@@ -31,14 +39,24 @@ function handleEdit() {
           :type="statusType(props.candidate.status)"
         />
       </view>
-      <button
-        v-if="props.candidate.status !== 'imported'"
-        class="candidate-card__edit"
-        type="default"
-        @click.stop="handleEdit"
-      >
-        编辑
-      </button>
+      <view v-if="canEdit" class="candidate-card__actions">
+        <button
+          class="candidate-card__edit"
+          type="default"
+          @click.stop="handleEdit"
+        >
+          编辑
+        </button>
+        <button
+          v-if="canRemove"
+          class="candidate-card__remove"
+          type="default"
+          @click.stop="handleRemove"
+        >
+          移除
+        </button>
+      </view>
+      <text v-else-if="props.candidate.status === 'importing'" class="candidate-card__readonly">导入中</text>
       <text v-else class="candidate-card__imported">已导入</text>
     </view>
 
@@ -89,14 +107,16 @@ function handleEdit() {
 
 .candidate-card__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 12rpx;
 }
 
 .candidate-card__heading {
   display: flex;
   flex: 1;
-  min-width: 0;
+  min-width: 240rpx;
   align-items: center;
 }
 
@@ -108,19 +128,36 @@ function handleEdit() {
   font-weight: 600;
 }
 
-.candidate-card__edit {
-  width: 112rpx;
+.candidate-card__actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 12rpx;
+  margin-left: 16rpx;
+}
+
+.candidate-card__edit,
+.candidate-card__remove {
+  width: 104rpx;
   height: 60rpx;
-  margin: 0 0 0 16rpx;
+  margin: 0;
   padding: 0;
   border-radius: 8rpx;
   background: #ffffff;
-  color: #1f5f8b;
   border: 1rpx solid #b8c7d8;
   font-size: 26rpx;
   line-height: 60rpx;
 }
 
+.candidate-card__edit {
+  color: #1f5f8b;
+}
+
+.candidate-card__remove {
+  color: #9f2a2a;
+  border-color: #f0c9c9;
+}
+
+.candidate-card__readonly,
 .candidate-card__imported {
   flex-shrink: 0;
   margin-left: 16rpx;

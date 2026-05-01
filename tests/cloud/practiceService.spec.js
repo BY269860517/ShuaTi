@@ -80,6 +80,306 @@ describe('practice service', () => {
     expect(detail.questions[0].explanation).toBeUndefined()
   })
 
+  it('creates all sequence practice ordered by question number and stores settings', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 3 })
+    await seedQuestion(db, { _id: 'q10', candidateId: 'candidate_10', questionNo: '10' })
+    await seedQuestion(db, { _id: 'q2', candidateId: 'candidate_2', questionNo: '2' })
+    await seedQuestion(db, { _id: 'q1', candidateId: 'candidate_1', questionNo: '1' })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      countMode: 'all',
+      orderMode: 'sequence',
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(session.questionIds).toEqual(['q1', 'q2', 'q10'])
+    expect(session).toMatchObject({
+      countMode: 'all',
+      orderMode: 'sequence',
+      scope: 'all',
+      questionType: 'all',
+    })
+  })
+
+  it('keeps legacy count calls on fixed sequence all settings', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 3 })
+    await seedQuestion(db, { _id: 'q1', candidateId: 'candidate_1', questionNo: '1' })
+    await seedQuestion(db, { _id: 'q2', candidateId: 'candidate_2', questionNo: '2' })
+    await seedQuestion(db, { _id: 'q3', candidateId: 'candidate_3', questionNo: '3' })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      count: 2,
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(session.questionIds).toEqual(['q1', 'q2'])
+    expect(session).toMatchObject({
+      countMode: 'fixed',
+      requestedCount: 2,
+      orderMode: 'sequence',
+      scope: 'all',
+      questionType: 'all',
+    })
+  })
+
+  it('creates custom practice using requestedCount for selection and session settings', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 3 })
+    await seedQuestion(db, { _id: 'q1', candidateId: 'candidate_1', questionNo: '1' })
+    await seedQuestion(db, { _id: 'q2', candidateId: 'candidate_2', questionNo: '2' })
+    await seedQuestion(db, { _id: 'q3', candidateId: 'candidate_3', questionNo: '3' })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      countMode: 'custom',
+      requestedCount: 2,
+      count: 3,
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(session.questionIds).toEqual(['q1', 'q2'])
+    expect(session.requestedCount).toBe(2)
+    expect(session.countMode).toBe('custom')
+  })
+
+  it('falls back to ten when count inputs are invalid', async () => {
+    const countDb = createFakeDb()
+    await seedMaterial(countDb, { questionCount: 2 })
+    await seedQuestion(countDb, { _id: 'count_q1', candidateId: 'candidate_1', questionNo: '1' })
+    await seedQuestion(countDb, { _id: 'count_q2', candidateId: 'candidate_2', questionNo: '2' })
+
+    const countSession = await createPractice({
+      db: countDb,
+      openid: 'user_a',
+      materialId: 'material_1',
+      count: 'abc',
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(countSession.requestedCount).toBe(10)
+    expect(countSession.totalCount).toBe(2)
+
+    const requestedDb = createFakeDb()
+    await seedMaterial(requestedDb, { questionCount: 2 })
+    await seedQuestion(requestedDb, { _id: 'requested_q1', candidateId: 'candidate_1', questionNo: '1' })
+    await seedQuestion(requestedDb, { _id: 'requested_q2', candidateId: 'candidate_2', questionNo: '2' })
+
+    const requestedSession = await createPractice({
+      db: requestedDb,
+      openid: 'user_a',
+      materialId: 'material_1',
+      requestedCount: 'bad',
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(requestedSession.requestedCount).toBe(10)
+    expect(requestedSession.totalCount).toBe(2)
+  })
+
+  it('falls back to count when requestedCount is invalid', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 3 })
+    await seedQuestion(db, { _id: 'q1', candidateId: 'candidate_1', questionNo: '1' })
+    await seedQuestion(db, { _id: 'q2', candidateId: 'candidate_2', questionNo: '2' })
+    await seedQuestion(db, { _id: 'q3', candidateId: 'candidate_3', questionNo: '3' })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      requestedCount: 'bad',
+      count: 2,
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(session.requestedCount).toBe(2)
+    expect(session.questionIds).toEqual(['q1', 'q2'])
+  })
+
+  it('orders sequence practice with stable non-numeric question number tie breakers', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 4 })
+    await seedQuestion(db, {
+      _id: 'q_x_later',
+      candidateId: 'candidate_1',
+      questionNo: 'X',
+      createdAt: '2026-04-26T00:00:03.000Z',
+    })
+    await seedQuestion(db, {
+      _id: 'q_a',
+      candidateId: 'candidate_2',
+      questionNo: 'A',
+      createdAt: '2026-04-26T00:00:02.000Z',
+    })
+    await seedQuestion(db, {
+      _id: 'q_x_b',
+      candidateId: 'candidate_3',
+      questionNo: 'X',
+      createdAt: '2026-04-26T00:00:01.000Z',
+    })
+    await seedQuestion(db, {
+      _id: 'q_x_a',
+      candidateId: 'candidate_4',
+      questionNo: 'X',
+      createdAt: '2026-04-26T00:00:01.000Z',
+    })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      countMode: 'all',
+      orderMode: 'sequence',
+      now: '2026-04-26T00:00:04.000Z',
+    })
+
+    expect(session.questionIds).toEqual(['q_a', 'q_x_a', 'q_x_b', 'q_x_later'])
+  })
+
+  it('creates custom practice filtered by multiple question type', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 3 })
+    await seedQuestion(db, { _id: 'single_1', candidateId: 'candidate_1', questionNo: '1', type: 'single' })
+    await seedQuestion(db, { _id: 'multiple_1', candidateId: 'candidate_2', questionNo: '2', type: 'multiple' })
+    await seedQuestion(db, { _id: 'multiple_2', candidateId: 'candidate_3', questionNo: '3', type: 'multiple' })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      questionType: 'multiple',
+      countMode: 'custom',
+      count: 1,
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(session.questionIds).toEqual(['multiple_1'])
+    expect(session.requestedCount).toBe(1)
+    expect(session.questionType).toBe('multiple')
+    expect(session.countMode).toBe('custom')
+  })
+
+  it('creates unattempted practice excluding attempted questions', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 3 })
+    await seedQuestion(db, { _id: 'q1', candidateId: 'candidate_1', questionNo: '1' })
+    await seedQuestion(db, { _id: 'q2', candidateId: 'candidate_2', questionNo: '2' })
+    await seedQuestion(db, { _id: 'q3', candidateId: 'candidate_3', questionNo: '3' })
+    await db.collection('attempts').add({
+      data: {
+        _id: 'attempt_old_q2',
+        ownerOpenid: 'user_a',
+        sessionId: 'old_session',
+        questionId: 'q2',
+        selectedKeys: ['A'],
+        isCorrect: true,
+        createdAt: '2026-04-25T00:00:00.000Z',
+        updatedAt: '2026-04-25T00:00:00.000Z',
+      },
+    })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      countMode: 'all',
+      scope: 'unattempted',
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(session.questionIds).toEqual(['q1', 'q3'])
+    expect(session.scope).toBe('unattempted')
+  })
+
+  it('does not exclude unattempted questions attempted only by another user', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 2 })
+    await seedQuestion(db, { _id: 'q1', candidateId: 'candidate_1', questionNo: '1' })
+    await seedQuestion(db, { _id: 'q2', candidateId: 'candidate_2', questionNo: '2' })
+    await db.collection('attempts').add({
+      data: {
+        _id: 'attempt_other_q1',
+        ownerOpenid: 'user_b',
+        sessionId: 'other_session',
+        questionId: 'q1',
+        selectedKeys: ['A'],
+        isCorrect: true,
+        createdAt: '2026-04-25T00:00:00.000Z',
+        updatedAt: '2026-04-25T00:00:00.000Z',
+      },
+    })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      countMode: 'all',
+      scope: 'unattempted',
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(session.questionIds).toEqual(['q1', 'q2'])
+  })
+
+  it('creates random practice with injectable random function', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 3 })
+    await seedQuestion(db, { _id: 'q1', candidateId: 'candidate_1', questionNo: '1' })
+    await seedQuestion(db, { _id: 'q2', candidateId: 'candidate_2', questionNo: '2' })
+    await seedQuestion(db, { _id: 'q3', candidateId: 'candidate_3', questionNo: '3' })
+
+    const session = await createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      countMode: 'all',
+      orderMode: 'random',
+      random: () => 0,
+      now: '2026-04-26T00:00:01.000Z',
+    })
+
+    expect(session.questionIds).toEqual(['q2', 'q3', 'q1'])
+  })
+
+  it('throws a specific error when unattempted practice has no remaining questions', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db)
+    await seedQuestion(db, { _id: 'q1' })
+    await db.collection('attempts').add({
+      data: {
+        _id: 'attempt_old_q1',
+        ownerOpenid: 'user_a',
+        sessionId: 'old_session',
+        questionId: 'q1',
+        selectedKeys: ['A'],
+        isCorrect: true,
+        createdAt: '2026-04-25T00:00:00.000Z',
+        updatedAt: '2026-04-25T00:00:00.000Z',
+      },
+    })
+
+    await expect(createPractice({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      scope: 'unattempted',
+      now: '2026-04-26T00:00:01.000Z',
+    })).rejects.toMatchObject({
+      code: 'practice_no_unattempted_questions',
+      message: '没有未练习题目',
+    })
+  })
+
   it('grades answer on backend and stores attempt', async () => {
     const db = createFakeDb()
     await seedMaterial(db)

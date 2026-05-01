@@ -168,6 +168,37 @@ describe('frontend cloud api client', () => {
     })
   })
 
+  test('candidateDelete calls cloud function with candidate id and auth tokens', async () => {
+    const candidate = {
+      _id: 'candidate_1',
+      materialId: 'material_1',
+      type: 'single',
+      stem: '测试题',
+      options: [],
+      answerKeys: [],
+      explanation: '',
+      status: 'invalid',
+      validationErrors: ['missing_options'],
+      importedQuestionId: '',
+      deletedAt: '2026-05-01T00:00:00.000Z',
+    }
+    const callFunctionMock = vi.fn().mockResolvedValue({
+      result: { ok: true, data: { candidate } },
+    })
+    globalThis.uniCloud = { callFunction: callFunctionMock }
+    globalThis.uni = {
+      login: vi.fn(),
+      getStorageSync: vi.fn().mockReturnValue('token_a'),
+      setStorageSync: vi.fn(),
+    }
+
+    await expect(api.candidateDelete('candidate_1')).resolves.toEqual({ candidate })
+    expect(callFunctionMock).toHaveBeenCalledWith({
+      name: 'candidateDelete',
+      data: { candidateId: 'candidate_1', _uniToken: 'token_a', uniToken: 'token_a' },
+    })
+  })
+
   test('wrongList calls cloud function with filters and auth tokens', async () => {
     const callFunctionMock = vi.fn().mockResolvedValue({
       result: {
@@ -227,6 +258,68 @@ describe('frontend cloud api client', () => {
     expect(callFunctionMock).toHaveBeenCalledWith({
       name: 'wrongPracticeCreate',
       data: { count: 10, _uniToken: 'token_a', uniToken: 'token_a' },
+    })
+  })
+
+  test('practiceCreate sends enhanced setup options', async () => {
+    const callFunctionMock = vi.fn().mockResolvedValue({
+      result: {
+        ok: true,
+        data: {
+          session: {
+            _id: 'session_1',
+            materialId: 'material_1',
+            questionIds: [],
+            status: 'active',
+            totalCount: 5,
+            correctCount: 0,
+            countMode: 'custom',
+            requestedCount: 3,
+            orderMode: 'random',
+            scope: 'unattempted',
+            questionType: 'multiple',
+            startedAt: '2026-05-01T00:00:00.000Z',
+            submittedAt: '',
+            createdAt: '2026-05-01T00:00:00.000Z',
+            updatedAt: '2026-05-01T00:00:00.000Z',
+          },
+        },
+      },
+    })
+    globalThis.uniCloud = { callFunction: callFunctionMock }
+    globalThis.uni = {
+      login: vi.fn(),
+      getStorageSync: vi.fn().mockReturnValue('token_a'),
+      setStorageSync: vi.fn(),
+    }
+
+    await expect(api.practiceCreate({
+      materialId: 'material_1',
+      count: 3,
+      countMode: 'custom',
+      orderMode: 'random',
+      scope: 'unattempted',
+      questionType: 'multiple',
+    })).resolves.toMatchObject({
+      session: {
+        countMode: 'custom',
+        orderMode: 'random',
+        scope: 'unattempted',
+        questionType: 'multiple',
+      },
+    })
+    expect(callFunctionMock).toHaveBeenCalledWith({
+      name: 'practiceCreate',
+      data: {
+        materialId: 'material_1',
+        count: 3,
+        countMode: 'custom',
+        orderMode: 'random',
+        scope: 'unattempted',
+        questionType: 'multiple',
+        _uniToken: 'token_a',
+        uniToken: 'token_a',
+      },
     })
   })
 

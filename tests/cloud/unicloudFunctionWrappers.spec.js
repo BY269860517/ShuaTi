@@ -15,6 +15,7 @@ const functions = [
   'candidateList',
   'candidateDetail',
   'candidateUpdate',
+  'candidateDelete',
   'importConfirm',
   'questionList',
   'practiceCreate',
@@ -51,6 +52,17 @@ describe('uniCloud function wrappers', () => {
     const packageJson = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/parseRunner/package.json', 'utf8'))
     expect(packageJson.dependencies['pdf-parse']).toBe('1.1.1')
     expect(packageJson.dependencies[legacySdkPackage]).toBeUndefined()
+  })
+
+  it('practiceCreate forwards enhanced practice settings to the shared service', () => {
+    const source = readFileSync('uniCloud-alipay/cloudfunctions/practiceCreate/index.js', 'utf8')
+
+    expect(source).toContain('count: event.count')
+    expect(source).toContain('requestedCount: event.requestedCount')
+    expect(source).toContain('countMode: event.countMode')
+    expect(source).toContain('orderMode: event.orderMode')
+    expect(source).toContain('scope: event.scope')
+    expect(source).toContain('questionType: event.questionType')
   })
 
   it('userLogin declares uni-id common module dependency', () => {

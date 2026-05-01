@@ -2,6 +2,11 @@ const { assertRequired } = require('../response')
 const { getMaterialForOwner } = require('./materialService')
 const { recordWrongQuestionResult } = require('./wrongService')
 
+const VALID_COUNT_MODES = ['fixed', 'all', 'custom']
+const VALID_ORDER_MODES = ['sequence', 'random']
+const VALID_SCOPES = ['all', 'unattempted']
+const VALID_QUESTION_TYPES = ['all', 'single', 'multiple', 'judge']
+
 function createError(code, message) {
   const error = new Error(message)
   error.code = code
@@ -25,6 +30,73 @@ function questionQuery(openid, materialId) {
   return materialId ? { ownerOpenid: openid, materialId } : { ownerOpenid: openid }
 }
 
+function normalizeEnum(value, validValues, fallback) {
+  return validValues.includes(value) ? value : fallback
+}
+
+function toPositiveCount(value) {
+  const count = Number(value)
+  if (!Number.isFinite(count) || count <= 0) return null
+  return Math.floor(count)
+}
+
+function normalizePracticeSettings({ count, requestedCount, countMode, orderMode, scope, questionType }) {
+  return {
+    countMode: normalizeEnum(countMode, VALID_COUNT_MODES, 'fixed'),
+    requestedCount: toPositiveCount(requestedCount) || toPositiveCount(count) || 10,
+    orderMode: normalizeEnum(orderMode, VALID_ORDER_MODES, 'sequence'),
+    scope: normalizeEnum(scope, VALID_SCOPES, 'all'),
+    questionType: normalizeEnum(questionType, VALID_QUESTION_TYPES, 'all'),
+  }
+}
+
+function getQuestionNoNumber(question) {
+  const value = String(question.questionNo || '').trim()
+  if (!value) return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+function compareValue(left, right) {
+  if (left === right) return 0
+  return left > right ? 1 : -1
+}
+
+function compareQuestionOrder(left, right) {
+  const leftNumber = getQuestionNoNumber(left)
+  const rightNumber = getQuestionNoNumber(right)
+  if (leftNumber !== null && rightNumber !== null && leftNumber !== rightNumber) {
+    return leftNumber - rightNumber
+  }
+  if (leftNumber !== null && rightNumber === null) return -1
+  if (leftNumber === null && rightNumber !== null) return 1
+
+  const questionNoOrder = compareValue(String(left.questionNo || ''), String(right.questionNo || ''))
+  if (questionNoOrder !== 0) return questionNoOrder
+
+  const createdAtOrder = compareValue(String(left.createdAt || ''), String(right.createdAt || ''))
+  if (createdAtOrder !== 0) return createdAtOrder
+
+  return compareValue(String(left._id || ''), String(right._id || ''))
+}
+
+function shuffleQuestions(questions, random = Math.random) {
+  const shuffled = [...questions]
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(random() * (index + 1))
+    const current = shuffled[index]
+    shuffled[index] = shuffled[target]
+    shuffled[target] = current
+  }
+  return shuffled
+}
+
+async function filterUnattemptedQuestions({ db, openid, questions }) {
+  const attempts = await db.collection('attempts').where({ ownerOpenid: openid }).get()
+  const attemptedQuestionIds = new Set(attempts.data.map((attempt) => attempt.questionId))
+  return questions.filter((question) => !attemptedQuestionIds.has(question._id))
+}
+
 function createAttemptId(sessionId, questionId) {
   return `attempt_${sessionId}_${questionId}`
 }
@@ -44,21 +116,55 @@ async function listQuestions({ db, openid, materialId }) {
   return result.data.map(hideAnswer)
 }
 
-async function createPractice({ db, openid, materialId, count, now }) {
+async function createPractice({
+  db,
+  openid,
+  materialId,
+  count,
+  requestedCount,
+  countMode,
+  orderMode,
+  scope,
+  questionType,
+  now,
+  random = Math.random,
+}) {
   assertRequired(now, 'missing_timestamp', '缺少创建时间')
 
   await assertMaterialReadyForPractice({ db, openid, materialId })
 
+  const settings = normalizePracticeSettings({ count, requestedCount, countMode, orderMode, scope, questionType })
   const result = await db.collection('questions').where(questionQuery(openid, materialId)).get()
-  const limit = Math.max(1, Number(count || 10))
-  const selected = result.data.slice(0, limit)
-  if (selected.length === 0) throw createError('practice_no_questions', '没有可练习题目')
+  let questions = result.data
+  if (settings.questionType !== 'all') {
+    questions = questions.filter((question) => question.type === settings.questionType)
+  }
+  if (settings.scope === 'unattempted') {
+    questions = await filterUnattemptedQuestions({ db, openid, questions })
+  }
+  questions = settings.orderMode === 'random'
+    ? shuffleQuestions(questions, random)
+    : [...questions].sort(compareQuestionOrder)
+  const selected = settings.countMode === 'all'
+    ? questions
+    : questions.slice(0, settings.requestedCount)
+  if (selected.length === 0) {
+    if (settings.scope === 'unattempted') {
+      throw createError('practice_no_unattempted_questions', '没有未练习题目')
+    }
+    throw createError('practice_no_questions', '没有可练习题目')
+  }
 
   const data = {
     ownerOpenid: openid,
     materialId: materialId || '',
     mode: 'material',
     questionIds: selected.map((question) => question._id),
+    countMode: settings.countMode,
+    requestedCount: settings.requestedCount,
+    orderMode: settings.orderMode,
+    scope: settings.scope,
+    questionType: settings.questionType,
     status: 'active',
     totalCount: selected.length,
     correctCount: 0,

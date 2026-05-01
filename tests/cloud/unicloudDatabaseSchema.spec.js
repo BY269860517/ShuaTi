@@ -60,6 +60,13 @@ describe('uniCloud database schemas', () => {
     expect(questions.properties.importClaimToken).toEqual({ bsonType: 'string' })
   })
 
+  it('allows parse candidates to be soft deleted with deletedAt', () => {
+    const parseCandidates = readSchema('parse_candidates')
+
+    expect(parseCandidates.properties.deletedAt).toEqual({ bsonType: 'string' })
+    expect(parseCandidates.required).not.toContain('deletedAt')
+  })
+
   it('declares attempt updated timestamp written by services', () => {
     const attempts = readSchema('attempts')
     expect(attempts.properties.updatedAt).toEqual({ bsonType: 'string' })
@@ -101,6 +108,21 @@ describe('uniCloud database schemas', () => {
 
     expect(schema.properties.mode).toMatchObject({ bsonType: 'string' })
     expect(schema.required).not.toContain('mode')
+  })
+
+  it('allows practice sessions to record enhanced practice settings', () => {
+    const schema = JSON.parse(readFileSync('uniCloud-alipay/database/practice_sessions.schema.json', 'utf8'))
+
+    expect(schema.properties.countMode).toEqual({ bsonType: 'string' })
+    expect(schema.properties.requestedCount).toEqual({ bsonType: 'number' })
+    expect(schema.properties.orderMode).toEqual({ bsonType: 'string' })
+    expect(schema.properties.scope).toEqual({ bsonType: 'string' })
+    expect(schema.properties.questionType).toEqual({ bsonType: 'string' })
+    expect(schema.required).not.toContain('countMode')
+    expect(schema.required).not.toContain('requestedCount')
+    expect(schema.required).not.toContain('orderMode')
+    expect(schema.required).not.toContain('scope')
+    expect(schema.required).not.toContain('questionType')
   })
 
   it('declares uni-id users index file', () => {

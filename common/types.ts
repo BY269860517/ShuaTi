@@ -10,6 +10,14 @@ export type PracticeSessionStatus = 'active' | 'submitted'
 
 export type PracticeSessionMode = 'material' | 'wrong'
 
+export type PracticeCountMode = 'fixed' | 'all' | 'custom'
+
+export type PracticeOrderMode = 'sequence' | 'random'
+
+export type PracticeScope = 'all' | 'unattempted'
+
+export type PracticeQuestionTypeFilter = 'all' | QuestionType
+
 export type ParseJobStatus = 'pending' | 'running' | 'finalizing' | 'done' | 'failed'
 
 export type WrongQuestionStatus = 'active' | 'mastered' | 'ignored'
@@ -64,6 +72,7 @@ export interface Candidate {
   sourcePageNo?: number | null
   createdAt?: string
   updatedAt?: string
+  deletedAt?: string
 }
 
 export interface SafeQuestion {
@@ -104,6 +113,11 @@ export interface PracticeSession {
   _id: string
   materialId: string
   mode?: PracticeSessionMode
+  countMode?: PracticeCountMode
+  requestedCount?: number
+  orderMode?: PracticeOrderMode
+  scope?: PracticeScope
+  questionType?: PracticeQuestionTypeFilter
   questionIds: string[]
   status: PracticeSessionStatus
   totalCount: number

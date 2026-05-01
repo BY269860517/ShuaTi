@@ -1,7 +1,13 @@
 const { createFakeDb } = require('./fakeDb')
 const { sharedModule } = require('./sharedModules')
 
-const { updateCandidate, listCandidates, getCandidateDetail } = sharedModule('services/candidateService')
+const {
+  updateCandidate,
+  listCandidates,
+  getCandidateDetail,
+  getCandidateRecord,
+  deleteCandidate,
+} = sharedModule('services/candidateService')
 const { confirmImport, createQuestionId } = sharedModule('services/importService')
 
 async function seedCandidate(db, overrides = {}) {
@@ -160,6 +166,131 @@ describe('candidate service', () => {
       now: '2026-04-26T00:00:10.000Z',
       input: { answerKeys: ['B'] },
     })).rejects.toMatchObject({ code: 'candidate_imported' })
+  })
+
+  it('soft removes an owned candidate and hides it from candidate lists and detail reads', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, {
+      readyCandidateCount: 1,
+      needReviewCandidateCount: 1,
+      invalidCandidateCount: 1,
+    })
+    const readyId = await seedCandidate(db, { status: 'ready' })
+    await seedCandidate(db, { status: 'need_review', answerKeys: [] })
+    await seedCandidate(db, { status: 'invalid', options: [], validationErrors: ['missing_options'] })
+
+    const removed = await deleteCandidate({
+      db,
+      openid: 'user_a',
+      candidateId: readyId,
+      now: '2026-05-01T00:00:10.000Z',
+    })
+    const secondRemove = await deleteCandidate({
+      db,
+      openid: 'user_a',
+      candidateId: readyId,
+      now: '2026-05-01T00:00:20.000Z',
+    })
+    const list = await listCandidates({ db, openid: 'user_a', materialId: 'material_1' })
+    const stored = await db.collection('parse_candidates').doc(readyId).get()
+    const material = await db.collection('materials').doc('material_1').get()
+
+    expect(removed.deletedAt).toBe('2026-05-01T00:00:10.000Z')
+    expect(secondRemove.deletedAt).toBe('2026-05-01T00:00:10.000Z')
+    expect(stored.data[0].deletedAt).toBe('2026-05-01T00:00:10.000Z')
+    expect(list.map((candidate) => candidate._id)).not.toContain(readyId)
+    await expect(getCandidateDetail({ db, openid: 'user_a', candidateId: readyId })).rejects.toMatchObject({ code: 'candidate_not_found' })
+    await expect(getCandidateRecord({ db, openid: 'user_a', candidateId: readyId })).rejects.toMatchObject({ code: 'candidate_not_found' })
+    expect(material.data[0].readyCandidateCount).toBe(0)
+    expect(material.data[0].needReviewCandidateCount).toBe(1)
+    expect(material.data[0].invalidCandidateCount).toBe(1)
+  })
+
+  it('refreshes stale material candidate counts when removing an already deleted candidate again', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, {
+      readyCandidateCount: 1,
+      needReviewCandidateCount: 1,
+      invalidCandidateCount: 1,
+    })
+    const deletedId = await seedCandidate(db, {
+      status: 'ready',
+      deletedAt: '2026-05-01T00:00:10.000Z',
+      updatedAt: '2026-05-01T00:00:10.000Z',
+    })
+    await seedCandidate(db, { status: 'need_review', answerKeys: [] })
+    await seedCandidate(db, { status: 'invalid', options: [], validationErrors: ['missing_options'] })
+
+    const removed = await deleteCandidate({
+      db,
+      openid: 'user_a',
+      candidateId: deletedId,
+      now: '2026-05-01T00:00:20.000Z',
+    })
+    const material = await db.collection('materials').doc('material_1').get()
+
+    expect(removed.deletedAt).toBe('2026-05-01T00:00:10.000Z')
+    expect(material.data[0]).toMatchObject({
+      readyCandidateCount: 0,
+      needReviewCandidateCount: 1,
+      invalidCandidateCount: 1,
+      updatedAt: '2026-05-01T00:00:20.000Z',
+    })
+  })
+
+  it('blocks removing another users candidate or imported candidates', async () => {
+    const db = createFakeDb()
+    const readyId = await seedCandidate(db, { status: 'ready' })
+    const importedId = await seedCandidate(db, { status: 'imported', importedQuestionId: 'question_1' })
+    const importingId = await seedCandidate(db, {
+      status: 'importing',
+      importClaimToken: 'claim_1',
+      importSourceUpdatedAt: '2026-04-26T00:00:00.000Z',
+    })
+
+    await expect(deleteCandidate({
+      db,
+      openid: 'user_b',
+      candidateId: readyId,
+      now: '2026-05-01T00:00:10.000Z',
+    })).rejects.toMatchObject({ code: 'candidate_not_found' })
+    await expect(deleteCandidate({
+      db,
+      openid: 'user_a',
+      candidateId: importedId,
+      now: '2026-05-01T00:00:10.000Z',
+    })).rejects.toMatchObject({ code: 'candidate_imported' })
+    await expect(deleteCandidate({
+      db,
+      openid: 'user_a',
+      candidateId: importingId,
+      now: '2026-05-01T00:00:10.000Z',
+    })).rejects.toMatchObject({ code: 'candidate_importing' })
+  })
+
+  it('does not import a candidate after it has been removed', async () => {
+    const db = createFakeDb()
+    await seedMaterial(db, { questionCount: 0, readyCandidateCount: 2 })
+    const removedId = await seedCandidate(db, { questionNo: '1', status: 'ready' })
+    const keptId = await seedCandidate(db, { questionNo: '2', status: 'ready', updatedAt: '2026-04-26T00:00:01.000Z' })
+
+    await deleteCandidate({
+      db,
+      openid: 'user_a',
+      candidateId: removedId,
+      now: '2026-05-01T00:00:10.000Z',
+    })
+    const result = await confirmImport({
+      db,
+      openid: 'user_a',
+      materialId: 'material_1',
+      now: '2026-05-01T00:00:20.000Z',
+    })
+    const questions = await db.collection('questions').where({ ownerOpenid: 'user_a', materialId: 'material_1' }).get()
+
+    expect(result.importedCount).toBe(1)
+    expect(questions.data).toHaveLength(1)
+    expect(questions.data[0].candidateId).toBe(keptId)
   })
 
   it('blocks editing a candidate while it is importing', async () => {
