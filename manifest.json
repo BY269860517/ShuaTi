@@ -1,18 +1,19 @@
 {
-  "name": "刷题导入",
-  "appid": "",
-  "description": "PDF 原题导入刷题小程序 MVP",
-  "versionName": "0.1.0",
-  "versionCode": "1",
-  "transformPx": false,
-  "mp-weixin": {
-    "appid": "",
-    "setting": {
-      "urlCheck": false,
-      "es6": true,
-      "postcss": true,
-      "minified": true
-    },
-    "usingComponents": true
-  }
+    "name" : "刷题小程序",
+    "appid" : "__UNI__E9B2043",
+    "description" : "PDF 原题导入刷题小程序 MVP",
+    "versionName" : "0.1.0",
+    "versionCode" : "1",
+    "transformPx" : false,
+    "vueVersion" : "3",
+    "mp-weixin" : {
+        "appid" : "wxb9d23e196c38b550",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "postcss" : true,
+            "minified" : true
+        },
+        "usingComponents" : true
+    }
 }

@@ -8,7 +8,11 @@ export type QuestionType = 'single' | 'multiple' | 'judge'
 
 export type PracticeSessionStatus = 'active' | 'submitted'
 
+export type PracticeSessionMode = 'material' | 'wrong'
+
 export type ParseJobStatus = 'pending' | 'running' | 'finalizing' | 'done' | 'failed'
+
+export type WrongQuestionStatus = 'active' | 'mastered' | 'ignored'
 
 export interface OptionItem {
   key: string
@@ -37,6 +41,7 @@ export interface Material {
   errorMessage: string
   createdAt: string
   updatedAt: string
+  deletedAt: string
   ownerOpenid?: string
 }
 
@@ -76,9 +81,29 @@ export interface SafeQuestion {
   updatedAt?: string
 }
 
+export interface WrongQuestion {
+  _id: string
+  ownerOpenid?: string
+  questionId: string
+  materialId: string
+  status: WrongQuestionStatus
+  wrongCount: number
+  correctStreak: number
+  lastWrongAt: string
+  masteredAt: string
+  ignoredAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface WrongQuestionItem extends Omit<WrongQuestion, 'ownerOpenid'> {
+  question: SafeQuestion
+}
+
 export interface PracticeSession {
   _id: string
   materialId: string
+  mode?: PracticeSessionMode
   questionIds: string[]
   status: PracticeSessionStatus
   totalCount: number

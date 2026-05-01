@@ -40,6 +40,14 @@ function assertFileBelongsToOwner(fileID, openid) {
   throw createError('invalid_file_owner', 'PDF 文件不属于当前用户')
 }
 
+function isMaterialDeleted(material) {
+  return Boolean(material && material.deletedAt)
+}
+
+function createMaterialNotFoundError() {
+  return createError('material_not_found', '资料不存在')
+}
+
 function summarizeMaterial(material) {
   return {
     _id: material._id,
@@ -54,6 +62,7 @@ function summarizeMaterial(material) {
     errorMessage: material.errorMessage || '',
     createdAt: material.createdAt,
     updatedAt: material.updatedAt,
+    deletedAt: material.deletedAt || '',
     ownerOpenid: material.ownerOpenid,
   }
 }
@@ -79,6 +88,7 @@ async function createMaterial({ db, openid, now, input }) {
     errorMessage: '',
     createdAt: now,
     updatedAt: now,
+    deletedAt: '',
   }
 
   const created = await db.collection('materials').add({ data })
@@ -87,37 +97,47 @@ async function createMaterial({ db, openid, now, input }) {
 
 async function listMaterials({ db, openid }) {
   const result = await db.collection('materials').where({ ownerOpenid: openid }).orderBy('createdAt', 'desc').get()
-  return result.data.map(summarizeMaterial)
+  return result.data.filter((material) => !isMaterialDeleted(material)).map(summarizeMaterial)
 }
 
-async function getMaterialForOwner({ db, openid, materialId }) {
+async function findMaterialForOwner({ db, openid, materialId, includeDeleted = false }) {
   assertRequired(materialId, 'missing_material_id', '缺少资料 ID')
 
   const result = await db.collection('materials').where({ _id: materialId, ownerOpenid: openid }).get()
   const material = result.data[0]
-  if (!material) {
-    const error = new Error('资料不存在')
-    error.code = 'material_not_found'
-    throw error
+  if (!material || (!includeDeleted && isMaterialDeleted(material))) {
+    throw createMaterialNotFoundError()
   }
   return material
 }
 
-async function getMaterialDetail({ db, openid, materialId }) {
-  assertRequired(materialId, 'missing_material_id', '缺少资料 ID')
+async function getMaterialForOwner({ db, openid, materialId, includeDeleted = false }) {
+  return findMaterialForOwner({ db, openid, materialId, includeDeleted })
+}
 
-  const result = await db.collection('materials').where({ _id: materialId, ownerOpenid: openid }).get()
-  const material = result.data[0]
-  if (!material) {
-    const error = new Error('资料不存在')
-    error.code = 'material_not_found'
-    throw error
-  }
+async function getMaterialDetail({ db, openid, materialId }) {
+  const material = await findMaterialForOwner({ db, openid, materialId })
   return summarizeMaterial(material)
+}
+
+async function deleteMaterial({ db, openid, materialId, now }) {
+  assertRequired(materialId, 'missing_material_id', '缺少资料 ID')
+  assertRequired(now, 'missing_timestamp', '缺少删除时间')
+
+  const material = await findMaterialForOwner({ db, openid, materialId, includeDeleted: true })
+  if (isMaterialDeleted(material)) return summarizeMaterial(material)
+
+  const data = {
+    deletedAt: now,
+    updatedAt: now,
+  }
+  await db.collection('materials').doc(material._id).update({ data })
+  return summarizeMaterial({ ...material, ...data })
 }
 
 module.exports = {
   createMaterial,
+  deleteMaterial,
   getMaterialDetail,
   getMaterialForOwner,
   listMaterials,

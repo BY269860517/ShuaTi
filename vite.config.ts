@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite'
-import uniPlugin from '@dcloudio/vite-plugin-uni'
+import type { PluginOption } from 'vite'
+import uniPluginModule from '@dcloudio/vite-plugin-uni'
 
-const uni = typeof uniPlugin === 'function' ? uniPlugin : uniPlugin.default
+type UniPluginFactory = () => PluginOption | PluginOption[]
+
+const uniPluginSource = uniPluginModule as unknown as UniPluginFactory | { default: UniPluginFactory }
+const uniPlugin = typeof uniPluginSource === 'function' ? uniPluginSource : uniPluginSource.default
 
 export default defineConfig({
-  plugins: [uni()],
+  plugins: [uniPlugin()],
 })

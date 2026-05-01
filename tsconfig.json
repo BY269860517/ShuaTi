@@ -6,13 +6,30 @@
     "strict": true,
     "jsx": "preserve",
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": ["@dcloudio/types", "vitest/globals"],
+    "types": ["@dcloudio/types"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.vue", "tests/**/*.js", "tests/**/*.ts"]
+  "include": [
+    "env.d.ts",
+    "main.ts",
+    "App.vue",
+    "common/**/*.ts",
+    "components/**/*.vue",
+    "pages/**/*.vue",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "tests",
+    "node_modules",
+    "dist",
+    "unpackage",
+    ".worktrees",
+    "uniCloud-alipay/cloudfunctions/**/node_modules"
+  ]
 }

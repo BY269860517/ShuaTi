@@ -2,7 +2,7 @@ const { createFakeDb } = require('./fakeDb')
 const { sharedModule } = require('./sharedModules')
 
 const { upsertUser } = sharedModule('services/userService')
-const { createMaterial, getMaterialDetail, getMaterialForOwner, listMaterials } = sharedModule('services/materialService')
+const { createMaterial, deleteMaterial, getMaterialDetail, getMaterialForOwner, listMaterials } = sharedModule('services/materialService')
 
 describe('material services', () => {
   function ownedFileId(openid, name = 'demo.pdf') {
@@ -241,6 +241,132 @@ describe('material services', () => {
     await expect(getMaterialDetail({ db, openid: 'user_a' })).rejects.toMatchObject({
       code: 'missing_material_id',
       message: '缺少资料 ID',
+    })
+  })
+  it('soft deletes an owned material and excludes it from material lists', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-05-01T00:00:00.000Z',
+      input: { fileID: ownedFileId('user_a', 'delete.pdf'), fileName: 'delete.pdf', fileSize: 1024, parseMode: 'inline_answer' },
+    })
+
+    const deleted = await deleteMaterial({
+      db,
+      openid: 'user_a',
+      materialId: material._id,
+      now: '2026-05-01T00:01:00.000Z',
+    })
+    const listed = await listMaterials({ db, openid: 'user_a' })
+
+    expect(deleted).toMatchObject({
+      _id: material._id,
+      fileName: 'delete.pdf',
+      deletedAt: '2026-05-01T00:01:00.000Z',
+      updatedAt: '2026-05-01T00:01:00.000Z',
+    })
+    expect(listed).toEqual([])
+  })
+
+  it('treats a deleted material as missing for detail and owner reads', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-05-01T00:00:00.000Z',
+      input: { fileID: ownedFileId('user_a', 'hidden.pdf'), fileName: 'hidden.pdf', fileSize: 1024, parseMode: 'inline_answer' },
+    })
+
+    await deleteMaterial({
+      db,
+      openid: 'user_a',
+      materialId: material._id,
+      now: '2026-05-01T00:02:00.000Z',
+    })
+
+    await expect(getMaterialDetail({ db, openid: 'user_a', materialId: material._id })).rejects.toMatchObject({
+      code: 'material_not_found',
+      message: '资料不存在',
+    })
+    await expect(getMaterialForOwner({ db, openid: 'user_a', materialId: material._id })).rejects.toMatchObject({
+      code: 'material_not_found',
+      message: '资料不存在',
+    })
+  })
+
+  it('does not allow deleting another users material', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-05-01T00:00:00.000Z',
+      input: { fileID: ownedFileId('user_a', 'private.pdf'), fileName: 'private.pdf', fileSize: 1024, parseMode: 'inline_answer' },
+    })
+
+    await expect(deleteMaterial({
+      db,
+      openid: 'user_b',
+      materialId: material._id,
+      now: '2026-05-01T00:03:00.000Z',
+    })).rejects.toMatchObject({
+      code: 'material_not_found',
+      message: '资料不存在',
+    })
+
+    const listed = await listMaterials({ db, openid: 'user_a' })
+    expect(listed).toHaveLength(1)
+    expect(listed[0]._id).toBe(material._id)
+  })
+
+  it('returns an existing summary when deleting an already deleted material', async () => {
+    const db = createFakeDb()
+    const material = await createMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-05-01T00:00:00.000Z',
+      input: { fileID: ownedFileId('user_a', 'again.pdf'), fileName: 'again.pdf', fileSize: 1024, parseMode: 'inline_answer' },
+    })
+
+    const first = await deleteMaterial({
+      db,
+      openid: 'user_a',
+      materialId: material._id,
+      now: '2026-05-01T00:05:00.000Z',
+    })
+    const second = await deleteMaterial({
+      db,
+      openid: 'user_a',
+      materialId: material._id,
+      now: '2026-05-01T00:06:00.000Z',
+    })
+
+    expect(second).toMatchObject({
+      _id: material._id,
+      deletedAt: first.deletedAt,
+      updatedAt: first.updatedAt,
+    })
+  })
+
+  it('requires material id and timestamp when deleting material', async () => {
+    const db = createFakeDb()
+
+    await expect(deleteMaterial({
+      db,
+      openid: 'user_a',
+      now: '2026-05-01T00:04:00.000Z',
+    })).rejects.toMatchObject({
+      code: 'missing_material_id',
+      message: '缺少资料 ID',
+    })
+
+    await expect(deleteMaterial({
+      db,
+      openid: 'user_a',
+      materialId: 'material_a',
+    })).rejects.toMatchObject({
+      code: 'missing_timestamp',
+      message: '缺少删除时间',
     })
   })
 })

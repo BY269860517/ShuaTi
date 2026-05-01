@@ -12,6 +12,8 @@ describe('pdf import frontend pages', () => {
 
     expect(paths).toContain('pages/index/index')
     expect(paths).toContain('pages/upload/index')
+    expect(paths).toContain('pages/profile/index')
+    expect(paths).toContain('pages/wrong/index')
     expect(paths).toContain('pages/material/detail')
     expect(paths).toContain('pages/import/review')
     expect(paths).toContain('pages/import/edit')
@@ -26,6 +28,11 @@ describe('pdf import frontend pages', () => {
     expect(existsSync('pages/practice/result.vue')).toBe(true)
   })
 
+  test('profile and wrong-question pages exist', () => {
+    expect(existsSync('pages/profile/index.vue')).toBe(true)
+    expect(existsSync('pages/wrong/index.vue')).toBe(true)
+  })
+
   test('home page logs in, loads materials, and navigates to upload/detail', () => {
     const source = read('pages/index/index.vue')
 
@@ -35,6 +42,114 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('EmptyState')
     expect(source).toContain('/pages/upload/index')
     expect(source).toContain('/pages/material/detail?materialId=')
+  })
+
+  test('home page links to profile page', () => {
+    const source = read('pages/index/index.vue')
+
+    expect(source).toContain('/pages/profile/index')
+    expect(source).toContain('@click="goProfile"')
+    expect(source).toContain('toolbar__secondary-button')
+    expect(source).toContain('我的')
+  })
+
+  test('home material cards expose a safe delete interaction', () => {
+    const cardSource = read('components/MaterialCard.vue')
+    const homeSource = read('pages/index/index.vue')
+    const loadMaterialsStart = homeSource.indexOf('async function loadMaterials')
+    const loadMaterialsEnd = homeSource.indexOf('function deleteConfirmText')
+    const loadMaterialsSource = homeSource.slice(loadMaterialsStart, loadMaterialsEnd)
+    const deleteHandlerStart = homeSource.indexOf('async function confirmDeleteMaterial')
+    const deleteHandlerEnd = homeSource.indexOf('function goUpload')
+    const deleteHandlerSource = homeSource.slice(deleteHandlerStart, deleteHandlerEnd)
+    const deleteGuardIndex = deleteHandlerSource.indexOf('if (!material || deletedId.value) return')
+    const deletingSetIndex = deleteHandlerSource.indexOf('deletedId.value = material._id')
+    const confirmIndex = deleteHandlerSource.indexOf('const confirmed = await showDeleteConfirm(material)')
+
+    expect(cardSource).toContain('deleting?: boolean')
+    expect(cardSource).toContain('delete: [id: string]')
+    expect(cardSource).toContain('@click.stop')
+    expect(cardSource).toContain("emit('delete', props.material._id)")
+    expect(cardSource).toContain('删除')
+    expect(cardSource).toContain('删除中')
+    expect(homeSource).toContain('@delete="confirmDeleteMaterial"')
+    expect(homeSource).toContain('api.materialDelete(material._id)')
+    expect(homeSource).toContain('showDeleteConfirm')
+    expect(homeSource).toContain('deletedId')
+    expect(homeSource).toContain('materials.value = materials.value.filter')
+    expect(homeSource).toContain('const deleteErrorMessage = ref')
+    expect(homeSource).toContain("deleteErrorMessage.value = ''")
+    expect(homeSource).toContain('deleteErrorMessage.value = error instanceof Error')
+    expect(homeSource).toContain("uni.showToast({ title: deleteErrorMessage.value, icon: 'none' })")
+    expect(homeSource).toContain('v-if="deleteErrorMessage"')
+    expect(homeSource).toContain('material-list__delete-error')
+    expect(loadMaterialsSource.match(/deleteErrorMessage\.value = ''/g)?.length).toBe(2)
+    expect(deleteGuardIndex).toBeGreaterThan(-1)
+    expect(deletingSetIndex).toBeGreaterThan(deleteGuardIndex)
+    expect(confirmIndex).toBeGreaterThan(deletingSetIndex)
+    expect(deleteHandlerSource).toContain('if (!confirmed) {')
+    expect(deleteHandlerSource).not.toContain('errorMessage.value')
+    expect(homeSource).toContain('已生成的题目、历史练习和错题记录会保留')
+    expect(homeSource).toContain('可能仍在后台解析')
+  })
+
+  test('profile page loads user, materials, wrong questions, and links to wrong book', () => {
+    const source = read('pages/profile/index.vue')
+
+    expect(source).toContain('onLoad(loadProfile)')
+    expect(source).toContain('api.userLogin()')
+    expect(source).toContain('api.materialList()')
+    expect(source).toContain("api.wrongList({ status: 'active' })")
+    expect(source).toContain('materialCount')
+    expect(source).toContain('activeWrongCount')
+    expect(source).toContain("uni.reLaunch({ url: '/pages/index/index' })")
+    expect(source).toContain("uni.navigateTo({ url: '/pages/wrong/index' })")
+    expect(source).toContain('/pages/wrong/index')
+    expect(source).toContain('我的')
+    expect(source).toContain('资料')
+    expect(source).toContain('当前错题')
+    expect(source).toContain('查看错题')
+    expect(source).toContain('返回资料')
+    expect(source).toContain('LoadingState')
+    expect(source).toContain('ErrorState')
+  })
+
+  test('wrong page lists active wrong questions and starts wrong practice', () => {
+    const source = read('pages/wrong/index.vue')
+    const normalizedWrongSource = source.replaceAll('item.', 'wrong.')
+    const markIndex = source.indexOf('api.wrongMarkMastered')
+    const reloadAfterMarkIndex = source.indexOf('await loadWrongQuestions()', markIndex)
+
+    expect(source).toContain("materialId.value = String(options?.materialId || '')")
+    expect(source).toContain("api.wrongList({ status: 'active'")
+    expect(source).toContain('materialId: materialId.value || undefined')
+    expect(source).toContain('api.wrongPracticeCreate')
+    expect(source).toContain('/pages/practice/do?sessionId=')
+    expect(source).toContain('Math.min(10, wrongQuestions.value.length)')
+    expect(source).toContain('uni.redirectTo({ url: `/pages/practice/do?sessionId=${result.session._id}` })')
+    expect(source).toContain('api.wrongMarkMastered')
+    expect(source).toContain('暂无错题')
+    expect(source).toContain('答错的题会自动进入这里。')
+    expect(normalizedWrongSource).toContain('wrong.question.stem')
+    expect(normalizedWrongSource).toContain('wrong.question.type')
+    expect(normalizedWrongSource).toContain('wrong.wrongCount')
+    expect(normalizedWrongSource).toContain('wrong.correctStreak')
+    expect(normalizedWrongSource).toContain('wrong.lastWrongAt')
+    expect(source).toContain('练习错题')
+    expect(source).toContain('LoadingState')
+    expect(source).toContain('ErrorState')
+    expect(source).toContain('EmptyState')
+    expect(markIndex).toBeGreaterThan(-1)
+    expect(reloadAfterMarkIndex).toBeGreaterThan(markIndex)
+  })
+
+  test('cloud api uses uni-app runtime identifiers so mini-program builds bind them', () => {
+    const source = read('common/api/cloud.ts')
+
+    expect(source).toContain("typeof uni !== 'undefined'")
+    expect(source).toContain("typeof uniCloud !== 'undefined'")
+    expect(source).not.toContain('const runtime = (globalThis as { uni?: UniRuntime }).uni')
+    expect(source).not.toContain('const runtime = (globalThis as { uniCloud?: UniCloudRuntime }).uniCloud')
   })
 
   test('upload page chooses a pdf, uploads to cloud storage, and starts parsing', () => {
@@ -65,6 +180,32 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('sanitizeCloudFileName')
     expect(source).toContain('replace(')
     expect(source).toContain('?%#')
+  })
+
+  test('upload page explains pdf requirements and blocks files over 20MB before upload', () => {
+    const source = read('pages/upload/index.vue')
+    const choosePdfStart = source.indexOf('async function choosePdf')
+    const choosePdfEnd = source.indexOf('function chooseMessageFile')
+    const choosePdfSource = source.slice(choosePdfStart, choosePdfEnd)
+    const submitStart = source.indexOf('async function submitUpload')
+    const submitEnd = source.indexOf('function sanitizeCloudFileName')
+    const submitSource = source.slice(submitStart, submitEnd)
+    const validationIndex = submitSource.indexOf('const validationError = validateSelectedFile(file)')
+    const uploadingIndex = submitSource.indexOf('uploading.value = true')
+
+    expect(source).toContain('const MAX_PDF_FILE_SIZE = 20 * 1024 * 1024')
+    expect(source).toContain("const MAX_PDF_FILE_SIZE_TEXT = '20MB'")
+    expect(source).toContain('文件大小不超过 {{ MAX_PDF_FILE_SIZE_TEXT }}')
+    expect(source).toContain('单选题、多选题、判断题')
+    expect(source).toContain('题目必须有选项和标准答案')
+    expect(source).toContain('function validateSelectedFile(file: ChosenFile): string')
+    expect(source).toContain('file.size > MAX_PDF_FILE_SIZE')
+    expect(source).toContain('文件大小不能超过')
+    expect(choosePdfSource).toContain('const validationError = validateSelectedFile(chosenFile)')
+    expect(choosePdfSource).toContain('selectedFile.value = null')
+    expect(choosePdfSource).toContain('errorMessage.value = validationError')
+    expect(validationIndex).toBeGreaterThan(-1)
+    expect(uploadingIndex).toBeGreaterThan(validationIndex)
   })
 
   test('package scripts invoke uni through a cross-platform node wrapper', () => {
@@ -105,6 +246,18 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('clearPolling()')
     expect(source).toContain('/pages/import/review?materialId=')
     expect(source).toContain('/pages/practice/setup?materialId=')
+  })
+
+  test('material detail links to material wrong questions', () => {
+    const source = read('pages/material/detail.vue')
+    const wrongButtonIndex = source.indexOf('@click="goMaterialWrong"')
+    const wrongButtonSource = source.slice(Math.max(0, wrongButtonIndex - 160), wrongButtonIndex + 160)
+
+    expect(source).toContain('/pages/wrong/index?materialId=')
+    expect(source).toContain('@click="goMaterialWrong"')
+    expect(wrongButtonIndex).toBeGreaterThan(-1)
+    expect(wrongButtonSource).toContain('v-if="canPractice"')
+    expect(source).toContain('错题')
   })
 
   test('material detail polling is active-page aware and blocks overlapping status refreshes', () => {
@@ -217,5 +370,16 @@ describe('pdf import frontend pages', () => {
     expect(source).toContain('/pages/practice/setup')
     expect(source).toContain('LoadingState')
     expect(source).toContain('ErrorState')
+  })
+
+  test('practice result links to wrong questions and handles wrong-practice retry', () => {
+    const source = read('pages/practice/result.vue')
+
+    expect(source).toContain("session.value?.mode === 'wrong'")
+    expect(source).toContain('/pages/wrong/index')
+    expect(source).toContain('@click="goWrongBook"')
+    expect(source).toContain('const suffix = session.value?.materialId ?')
+    expect(source).toContain('uni.redirectTo({ url: `/pages/wrong/index${suffix}` })')
+    expect(source).toContain('查看错题')
   })
 })

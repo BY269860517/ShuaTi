@@ -8,6 +8,7 @@ const functions = [
   'materialCreate',
   'materialList',
   'materialDetail',
+  'materialDelete',
   'parseStart',
   'parseRunner',
   'parseStatus',
@@ -19,6 +20,9 @@ const functions = [
   'practiceCreate',
   'practiceDetail',
   'answerSubmit',
+  'wrongList',
+  'wrongPracticeCreate',
+  'wrongMarkMastered',
 ]
 
 describe('uniCloud function wrappers', () => {
@@ -43,9 +47,9 @@ describe('uniCloud function wrappers', () => {
     })
   }
 
-  it('parseRunner declares pdf-parse without legacy sdk', () => {
+  it('parseRunner pins a cloud-runtime-compatible pdf parser without legacy sdk', () => {
     const packageJson = JSON.parse(readFileSync('uniCloud-alipay/cloudfunctions/parseRunner/package.json', 'utf8'))
-    expect(packageJson.dependencies['pdf-parse']).toBe('latest')
+    expect(packageJson.dependencies['pdf-parse']).toBe('1.1.1')
     expect(packageJson.dependencies[legacySdkPackage]).toBeUndefined()
   })
 

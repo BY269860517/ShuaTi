@@ -2,7 +2,9 @@
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { api } from '@/common/api/cloud'
+import { AD_CONFIG } from '@/common/ad/config'
 import type { PracticeSession } from '@/common/types'
+import AppAd from '@/components/AppAd.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import LoadingState from '@/components/LoadingState.vue'
 
@@ -21,9 +23,14 @@ const totalCount = computed(() => {
   return session.value.totalCount
 })
 const retryUrl = computed(() => {
+  if (session.value?.mode === 'wrong') {
+    const suffix = session.value.materialId ? `?materialId=${session.value.materialId}` : ''
+    return `/pages/wrong/index${suffix}`
+  }
   if (session.value?.materialId) return `/pages/practice/setup?materialId=${session.value.materialId}`
   return '/pages/practice/setup'
 })
+const resultAdUnitId = computed(() => (AD_CONFIG.enabled ? AD_CONFIG.resultFeedUnitId : ''))
 
 onLoad((options) => {
   sessionId.value = String(options?.sessionId || '')
@@ -58,6 +65,11 @@ function goHome() {
 function retryPractice() {
   uni.redirectTo({ url: retryUrl.value })
 }
+
+function goWrongBook() {
+  const suffix = session.value?.materialId ? `?materialId=${session.value.materialId}` : ''
+  uni.redirectTo({ url: `/pages/wrong/index${suffix}` })
+}
 </script>
 
 <template>
@@ -76,9 +88,14 @@ function retryPractice() {
 
       <ErrorState v-if="errorMessage" :message="errorMessage" @retry="loadResult" />
 
+      <AppAd :unit-id="resultAdUnitId" />
+
       <view class="actions">
         <button class="actions__button actions__button--primary" type="default" @click="retryPractice">
           重练同一材料
+        </button>
+        <button class="actions__button" type="default" @click="goWrongBook">
+          查看错题
         </button>
         <button class="actions__button" type="default" @click="goHome">
           回首页

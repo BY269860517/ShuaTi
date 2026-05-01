@@ -1,9 +1,8 @@
 {
-  "name": "parse-runner",
+  "name": "material-delete",
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "pdf-parse": "1.1.1",
     "shuati-shared": "file:../common/shuati-shared"
   }
 }

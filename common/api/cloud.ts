@@ -9,6 +9,8 @@ import type {
   PracticeSession,
   SafeQuestion,
   UserInfo,
+  WrongQuestionItem,
+  WrongQuestionStatus,
 } from '../types'
 
 interface UniCloudRuntime {
@@ -62,6 +64,16 @@ export interface PracticeCreateInput {
   count: number
 }
 
+export interface WrongListInput {
+  status?: WrongQuestionStatus
+  materialId?: string
+}
+
+export interface WrongPracticeCreateInput {
+  materialId?: string
+  count: number
+}
+
 export interface AnswerSubmitInput {
   sessionId: string
   questionId: string
@@ -87,13 +99,17 @@ export async function callFunction<T>(name: string, data: object = {}): Promise<
 }
 
 function getUniCloudRuntime(): UniCloudRuntime {
-  const runtime = (globalThis as { uniCloud?: UniCloudRuntime }).uniCloud
+  const runtime = typeof uniCloud !== 'undefined'
+    ? uniCloud as UniCloudRuntime
+    : (globalThis as { uniCloud?: UniCloudRuntime }).uniCloud
   if (!runtime?.callFunction) throwCloudError('missing_unicloud', 'uniCloud runtime is unavailable')
   return runtime
 }
 
 function getUniRuntime(): UniRuntime {
-  const runtime = (globalThis as { uni?: UniRuntime }).uni
+  const runtime = typeof uni !== 'undefined'
+    ? uni as UniRuntime
+    : (globalThis as { uni?: UniRuntime }).uni
   if (!runtime?.login) throwCloudError('missing_uni', 'uni runtime is unavailable')
   return runtime
 }
@@ -160,6 +176,7 @@ export const api = {
   materialCreate: (data: MaterialCreateInput) => callFunction<{ material: CreatedMaterial }>('materialCreate', data),
   materialList: () => callFunction<{ materials: Material[] }>('materialList'),
   materialDetail: (materialId: string) => callFunction<{ material: Material }>('materialDetail', { materialId }),
+  materialDelete: (materialId: string) => callFunction<{ material: Material }>('materialDelete', { materialId }),
   parseStart: (materialId: string) => callFunction<{ job: ParseJob }>('parseStart', { materialId }),
   parseRunner: (jobId: string) => callFunction<{ job: ParseJob }>('parseRunner', { jobId }),
   parseStatus: (materialId: string) => callFunction<{ material: Material; job: ParseJob | null }>('parseStatus', { materialId }),
@@ -170,6 +187,12 @@ export const api = {
   importConfirm: (materialId: string) => callFunction<{ importedCount: number; skippedCount: number }>('importConfirm', { materialId }),
   questionList: (materialId?: string) => callFunction<{ questions: SafeQuestion[] }>('questionList', { materialId }),
   practiceCreate: (data: PracticeCreateInput) => callFunction<{ session: PracticeSession }>('practiceCreate', data),
+  wrongList: (data: WrongListInput = {}) =>
+    callFunction<{ wrongQuestions: WrongQuestionItem[] }>('wrongList', data),
+  wrongPracticeCreate: (data: WrongPracticeCreateInput) =>
+    callFunction<{ session: PracticeSession }>('wrongPracticeCreate', data),
+  wrongMarkMastered: (wrongQuestionId: string) =>
+    callFunction<{ wrongQuestion: WrongQuestionItem }>('wrongMarkMastered', { wrongQuestionId }),
   practiceDetail: (sessionId: string) => callFunction<PracticeDetail>('practiceDetail', { sessionId }),
   answerSubmit: (data: AnswerSubmitInput) => callFunction<AnswerSubmitResult>('answerSubmit', data),
 }

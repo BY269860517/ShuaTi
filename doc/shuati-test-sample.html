@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>刷题小程序上传解析测试题</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm;
+    }
+
+    body {
+      color: #1f2933;
+      font-family: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin: 0 0 8px;
+    }
+
+    .meta {
+      color: #52606d;
+      margin: 0 0 22px;
+    }
+
+    .question {
+      break-inside: avoid;
+      margin: 0 0 18px;
+    }
+
+    .answer {
+      color: #0b5cad;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <section class="question">
+    <p>1. 用户第一次验证 PDF 导入流程时，应该先执行哪一步？</p>
+    <p>A. 上传一份 PDF 资料</p>
+    <p>B. 直接开始练习</p>
+    <p>C. 删除所有候选题</p>
+    <p>D. 修改云函数密钥</p>
+    <p class="answer">答案：A</p>
+    <p>解析：系统需要先拿到 PDF 文件，才能创建资料记录并进入后续解析流程。</p>
+  </section>
+
+  <section class="question">
+    <p>2. 如果解析后出现候选题列表，下一步最合理的操作是什么？</p>
+    <p>A. 立即关闭小程序</p>
+    <p>B. 审核候选题并确认题干、选项和答案</p>
+    <p>C. 清空微信开发者工具缓存</p>
+    <p>D. 重新生成 AppID</p>
+    <p class="answer">答案：B</p>
+    <p>解析：候选题需要先审核，确认内容正确后再导入题库。</p>
+  </section>
+
+  <section class="question">
+    <p>3. 下列哪一项最能说明 PDF 文本解析已经成功？</p>
+    <p>A. 页面显示登录失败</p>
+    <p>B. 页面显示暂无资料</p>
+    <p>C. 资料详情页出现可审核的候选题</p>
+    <p>D. 微信开发者工具弹出 touristappid</p>
+    <p class="answer">答案：C</p>
+    <p>解析：候选题来自 PDF 文本抽取和题目结构识别，出现候选题说明解析链路已经跑通。</p>
+  </section>
+
+  <section class="question">
+    <p>4. 完成候选题导入后，用户应该进入哪个流程继续验证？</p>
+    <p>A. 练习答题流程</p>
+    <p>B. 重新关联云空间</p>
+    <p>C. 修改 package.json</p>
+    <p>D. 删除 uniCloud 目录</p>
+    <p class="answer">答案：A</p>
+    <p>解析：导入题库后，题目才能用于创建练习并提交答案。</p>
+  </section>
+
+  <section class="question">
+    <p>5. 如果上传 PDF 后云函数返回错误，最应该优先查看哪里？</p>
+    <p>A. 云函数运行日志</p>
+    <p>B. 电脑壁纸设置</p>
+    <p>C. 浏览器收藏夹</p>
+    <p>D. 文件夹图标颜色</p>
+    <p class="answer">答案：A</p>
+    <p>解析：云函数日志会给出服务端真实错误，比前端通用提示更接近根因。</p>
+  </section>
+</body>
+</html>

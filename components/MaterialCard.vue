@@ -4,8 +4,10 @@ import { MATERIAL_STATUS_TEXT } from '@/common/constants/status'
 import { formatDate, formatFileSize } from '@/common/format'
 import StatusBadge from './StatusBadge.vue'
 
-const props = defineProps<{ material: Material }>()
-const emit = defineEmits<{ open: [id: string] }>()
+const props = withDefaults(defineProps<{ material: Material; deleting?: boolean }>(), {
+  deleting: false,
+})
+const emit = defineEmits<{ open: [id: string]; delete: [id: string] }>()
 
 function statusType(status: Material['status']): 'neutral' | 'success' | 'warning' | 'danger' {
   if (status === 'ready') return 'success'
@@ -13,16 +15,31 @@ function statusType(status: Material['status']): 'neutral' | 'success' | 'warnin
   if (status === 'parsing' || status === 'reviewing') return 'warning'
   return 'neutral'
 }
+
+function requestDelete() {
+  if (props.deleting) return
+  emit('delete', props.material._id)
+}
 </script>
 
 <template>
   <view class="material-card" hover-class="material-card--hover" @click="emit('open', props.material._id)">
     <view class="material-card__header">
       <text class="material-card__title">{{ props.material.fileName }}</text>
-      <StatusBadge
-        :text="MATERIAL_STATUS_TEXT[props.material.status]"
-        :type="statusType(props.material.status)"
-      />
+      <view class="material-card__actions">
+        <StatusBadge
+          :text="MATERIAL_STATUS_TEXT[props.material.status]"
+          :type="statusType(props.material.status)"
+        />
+        <button
+          class="material-card__delete"
+          type="default"
+          :disabled="props.deleting"
+          @click.stop="requestDelete"
+        >
+          {{ props.deleting ? '删除中' : '删除' }}
+        </button>
+      </view>
     </view>
 
     <view class="material-card__stats">
@@ -79,6 +96,31 @@ function statusType(status: Material['status']): 'neutral' | 'success' | 'warnin
   line-height: 42rpx;
   font-weight: 600;
   word-break: break-all;
+}
+
+.material-card__actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.material-card__delete {
+  width: 96rpx;
+  height: 52rpx;
+  margin: 0;
+  padding: 0;
+  border-radius: 8rpx;
+  border: 1rpx solid #d6dde8;
+  background: #ffffff;
+  color: #9f2a2a;
+  font-size: 24rpx;
+  line-height: 52rpx;
+}
+
+.material-card__delete[disabled] {
+  color: #a4acb9;
+  background: #f2f4f7;
 }
 
 .material-card__stats {

@@ -22,6 +22,7 @@
     "invalidCandidateCount": { "bsonType": "number" },
     "errorMessage": { "bsonType": "string" },
     "createdAt": { "bsonType": "string" },
-    "updatedAt": { "bsonType": "string" }
+    "updatedAt": { "bsonType": "string" },
+    "deletedAt": { "bsonType": "string" }
   }
 }

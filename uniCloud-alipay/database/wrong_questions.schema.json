@@ -1,0 +1,26 @@
+{
+  "bsonType": "object",
+  "required": ["ownerOpenid", "questionId", "materialId", "status", "wrongCount", "correctStreak", "lastWrongAt", "createdAt", "updatedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false,
+    "count": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "ownerOpenid": { "bsonType": "string" },
+    "questionId": { "bsonType": "string" },
+    "materialId": { "bsonType": "string" },
+    "status": { "bsonType": "string" },
+    "wrongCount": { "bsonType": "number" },
+    "correctStreak": { "bsonType": "number" },
+    "lastWrongAt": { "bsonType": "string" },
+    "lastAttemptId": { "bsonType": "string" },
+    "masteredAt": { "bsonType": "string" },
+    "ignoredAt": { "bsonType": "string" },
+    "createdAt": { "bsonType": "string" },
+    "updatedAt": { "bsonType": "string" }
+  }
+}

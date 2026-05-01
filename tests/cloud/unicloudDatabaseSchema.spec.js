@@ -65,6 +65,44 @@ describe('uniCloud database schemas', () => {
     expect(attempts.properties.updatedAt).toEqual({ bsonType: 'string' })
   })
 
+  it('allows materials to be soft deleted with deletedAt', () => {
+    const materials = readSchema('materials')
+
+    expect(materials.properties.deletedAt).toEqual({ bsonType: 'string' })
+    expect(materials.required).not.toContain('deletedAt')
+  })
+
+  it('declares wrong questions schema for server-only access', () => {
+    const schema = JSON.parse(readFileSync('uniCloud-alipay/database/wrong_questions.schema.json', 'utf8'))
+
+    expect(schema.required).toEqual(expect.arrayContaining([
+      'ownerOpenid',
+      'questionId',
+      'materialId',
+      'status',
+      'wrongCount',
+      'correctStreak',
+      'lastWrongAt',
+      'createdAt',
+      'updatedAt',
+    ]))
+    expect(schema.permission).toMatchObject({
+      read: false,
+      create: false,
+      update: false,
+      delete: false,
+      count: false,
+    })
+    expect(schema.properties.status).toMatchObject({ bsonType: 'string' })
+  })
+
+  it('allows practice sessions to record wrong-practice mode', () => {
+    const schema = JSON.parse(readFileSync('uniCloud-alipay/database/practice_sessions.schema.json', 'utf8'))
+
+    expect(schema.properties.mode).toMatchObject({ bsonType: 'string' })
+    expect(schema.required).not.toContain('mode')
+  })
+
   it('declares uni-id users index file', () => {
     const filePath = path.join('uniCloud-alipay', 'database', 'uni-id-users.index.json')
     expect(existsSync(filePath)).toBe(true)

@@ -13,6 +13,7 @@
     "ownerOpenid": { "bsonType": "string" },
     "materialId": { "bsonType": "string" },
     "questionIds": { "bsonType": "array" },
+    "mode": { "bsonType": "string" },
     "status": { "bsonType": "string" },
     "totalCount": { "bsonType": "number" },
     "correctCount": { "bsonType": "number" },

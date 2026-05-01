@@ -166,6 +166,11 @@ function goPracticeSetup() {
   if (!material.value) return
   uni.navigateTo({ url: `/pages/practice/setup?materialId=${material.value._id}` })
 }
+
+function goMaterialWrong() {
+  if (!material.value) return
+  uni.navigateTo({ url: `/pages/wrong/index?materialId=${material.value._id}` })
+}
 </script>
 
 <template>
@@ -227,6 +232,14 @@ function goPracticeSetup() {
           @click="goPracticeSetup"
         >
           练习设置
+        </button>
+        <button
+          v-if="canPractice"
+          class="actions__button"
+          type="default"
+          @click="goMaterialWrong"
+        >
+          练习本资料错题
         </button>
       </view>
     </view>

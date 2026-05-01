@@ -131,4 +131,142 @@ describe('frontend cloud api client', () => {
     })
     expect(callFunctionMock).toHaveBeenCalledWith({ name: 'parseRunner', data: { jobId: 'job_1' } })
   })
+
+  test('materialDelete calls cloud function with material id and auth tokens', async () => {
+    const material = {
+      _id: 'material_1',
+      fileName: 'demo.pdf',
+      fileSize: 1024,
+      status: 'failed',
+      parseMode: 'inline_answer',
+      questionCount: 0,
+      readyCandidateCount: 0,
+      needReviewCandidateCount: 0,
+      invalidCandidateCount: 0,
+      errorMessage: '解析失败',
+      createdAt: '2026-05-01T00:00:00.000Z',
+      updatedAt: '2026-05-01T00:01:00.000Z',
+      deletedAt: '2026-05-01T00:01:00.000Z',
+    }
+    const callFunctionMock = vi.fn().mockResolvedValue({
+      result: {
+        ok: true,
+        data: { material },
+      },
+    })
+    globalThis.uniCloud = { callFunction: callFunctionMock }
+    globalThis.uni = {
+      login: vi.fn(),
+      getStorageSync: vi.fn().mockReturnValue('token_a'),
+      setStorageSync: vi.fn(),
+    }
+
+    await expect(api.materialDelete('material_1')).resolves.toEqual({ material })
+    expect(callFunctionMock).toHaveBeenCalledWith({
+      name: 'materialDelete',
+      data: { materialId: 'material_1', _uniToken: 'token_a', uniToken: 'token_a' },
+    })
+  })
+
+  test('wrongList calls cloud function with filters and auth tokens', async () => {
+    const callFunctionMock = vi.fn().mockResolvedValue({
+      result: {
+        ok: true,
+        data: {
+          wrongQuestions: [],
+        },
+      },
+    })
+    globalThis.uniCloud = { callFunction: callFunctionMock }
+    globalThis.uni = {
+      login: vi.fn(),
+      getStorageSync: vi.fn().mockReturnValue('token_a'),
+      setStorageSync: vi.fn(),
+    }
+
+    await expect(api.wrongList({ status: 'active', materialId: 'material_1' })).resolves.toEqual({
+      wrongQuestions: [],
+    })
+    expect(callFunctionMock).toHaveBeenCalledWith({
+      name: 'wrongList',
+      data: { status: 'active', materialId: 'material_1', _uniToken: 'token_a', uniToken: 'token_a' },
+    })
+  })
+
+  test('wrongPracticeCreate calls cloud function with count and returns wrong mode session', async () => {
+    const callFunctionMock = vi.fn().mockResolvedValue({
+      result: {
+        ok: true,
+        data: {
+          session: {
+            _id: 'session_1',
+            materialId: '',
+            mode: 'wrong',
+            questionIds: [],
+            status: 'active',
+            totalCount: 10,
+            correctCount: 0,
+            startedAt: '2026-04-30T00:00:00.000Z',
+            submittedAt: '',
+            createdAt: '2026-04-30T00:00:00.000Z',
+            updatedAt: '2026-04-30T00:00:00.000Z',
+          },
+        },
+      },
+    })
+    globalThis.uniCloud = { callFunction: callFunctionMock }
+    globalThis.uni = {
+      login: vi.fn(),
+      getStorageSync: vi.fn().mockReturnValue('token_a'),
+      setStorageSync: vi.fn(),
+    }
+
+    await expect(api.wrongPracticeCreate({ count: 10 })).resolves.toMatchObject({
+      session: { mode: 'wrong' },
+    })
+    expect(callFunctionMock).toHaveBeenCalledWith({
+      name: 'wrongPracticeCreate',
+      data: { count: 10, _uniToken: 'token_a', uniToken: 'token_a' },
+    })
+  })
+
+  test('wrongMarkMastered calls cloud function with wrong question id and returns wrong question', async () => {
+    const wrongQuestion = {
+      _id: 'wrong_1',
+      questionId: 'questions_1',
+      materialId: 'material_1',
+      status: 'mastered',
+      wrongCount: 2,
+      correctStreak: 3,
+      lastWrongAt: '2026-04-30T00:00:00.000Z',
+      masteredAt: '2026-04-30T01:00:00.000Z',
+      question: {
+        _id: 'questions_1',
+        materialId: 'material_1',
+        type: 'single',
+        stem: '题干',
+        options: [{ key: 'A', text: '选项 A' }],
+      },
+    }
+    const callFunctionMock = vi.fn().mockResolvedValue({
+      result: {
+        ok: true,
+        data: {
+          wrongQuestion,
+        },
+      },
+    })
+    globalThis.uniCloud = { callFunction: callFunctionMock }
+    globalThis.uni = {
+      login: vi.fn(),
+      getStorageSync: vi.fn().mockReturnValue('token_a'),
+      setStorageSync: vi.fn(),
+    }
+
+    await expect(api.wrongMarkMastered('wrong_1')).resolves.toEqual({ wrongQuestion })
+    expect(callFunctionMock).toHaveBeenCalledWith({
+      name: 'wrongMarkMastered',
+      data: { wrongQuestionId: 'wrong_1', _uniToken: 'token_a', uniToken: 'token_a' },
+    })
+  })
 })

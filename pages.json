@@ -5,6 +5,14 @@
       "style": { "navigationBarTitleText": "我的资料" }
     },
     {
+      "path": "pages/profile/index",
+      "style": { "navigationBarTitleText": "我的" }
+    },
+    {
+      "path": "pages/wrong/index",
+      "style": { "navigationBarTitleText": "错题本" }
+    },
+    {
       "path": "pages/upload/index",
       "style": { "navigationBarTitleText": "上传 PDF" }
     },

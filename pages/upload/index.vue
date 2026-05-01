@@ -23,6 +23,8 @@ const parseMode = ref<ParseMode>('inline_answer')
 const selectedFile = ref<ChosenFile | null>(null)
 const uploading = ref(false)
 const errorMessage = ref('')
+const MAX_PDF_FILE_SIZE = 20 * 1024 * 1024
+const MAX_PDF_FILE_SIZE_TEXT = '20MB'
 
 const canSubmit = computed(() => Boolean(selectedFile.value) && !uploading.value)
 
@@ -41,11 +43,19 @@ async function choosePdf() {
     const file = result.tempFiles[0]
     if (!file) return
 
-    selectedFile.value = {
+    const chosenFile = {
       name: file.name,
       size: file.size,
       path: file.path,
     }
+    const validationError = validateSelectedFile(chosenFile)
+    if (validationError) {
+      selectedFile.value = null
+      errorMessage.value = validationError
+      return
+    }
+
+    selectedFile.value = chosenFile
   } catch (error) {
     const message = error instanceof Error ? error.message : ''
     if (message && !message.includes('cancel')) {
@@ -66,13 +76,26 @@ function chooseMessageFile(): Promise<ChooseMessageFileResult> {
   })
 }
 
+function validateSelectedFile(file: ChosenFile): string {
+  if (file.size > MAX_PDF_FILE_SIZE) {
+    return `文件大小不能超过 ${MAX_PDF_FILE_SIZE_TEXT}，请重新选择较小的 PDF。`
+  }
+
+  return ''
+}
+
 async function submitUpload() {
   const file = selectedFile.value
   if (!file || uploading.value) return
 
-  uploading.value = true
   errorMessage.value = ''
+  const validationError = validateSelectedFile(file)
+  if (validationError) {
+    errorMessage.value = validationError
+    return
+  }
 
+  uploading.value = true
   try {
     const loginResult = await api.userLogin()
     const uploadResult = await uniCloud.uploadFile({
@@ -141,6 +164,11 @@ function sanitizeCloudFileName(fileName: string): string {
         <text class="file-info__size">{{ formatFileSize(selectedFile.size) }}</text>
       </view>
       <text v-else class="hint">仅支持从微信聊天文件中选择一个 PDF。</text>
+      <view class="upload-guidance">
+        <text class="upload-guidance__item">文件大小不超过 {{ MAX_PDF_FILE_SIZE_TEXT }}。</text>
+        <text class="upload-guidance__item">目前支持单选题、多选题、判断题。</text>
+        <text class="upload-guidance__item">题目必须有选项和标准答案，缺少答案会进入待审核或不可用。</text>
+      </view>
     </view>
 
     <ErrorState v-if="errorMessage" :message="errorMessage" retry-text="" />
@@ -249,6 +277,23 @@ function sanitizeCloudFileName(fileName: string): string {
   color: #697586;
   font-size: 26rpx;
   line-height: 38rpx;
+}
+
+.upload-guidance {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #eef2f7;
+}
+
+.upload-guidance__item {
+  display: block;
+  color: #475467;
+  font-size: 26rpx;
+  line-height: 38rpx;
+}
+
+.upload-guidance__item + .upload-guidance__item {
+  margin-top: 6rpx;
 }
 
 .actions {

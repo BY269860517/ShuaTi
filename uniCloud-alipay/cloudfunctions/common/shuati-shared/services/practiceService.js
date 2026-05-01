@@ -1,5 +1,6 @@
 const { assertRequired } = require('../response')
 const { getMaterialForOwner } = require('./materialService')
+const { recordWrongQuestionResult } = require('./wrongService')
 
 function createError(code, message) {
   const error = new Error(message)
@@ -56,6 +57,7 @@ async function createPractice({ db, openid, materialId, count, now }) {
   const data = {
     ownerOpenid: openid,
     materialId: materialId || '',
+    mode: 'material',
     questionIds: selected.map((question) => question._id),
     status: 'active',
     totalCount: selected.length,
@@ -104,16 +106,16 @@ async function upsertAttempt({ db, openid, sessionId, questionId, selectedKeys, 
   }
   const existing = await attempts.where({ _id: attemptId, ownerOpenid: openid }).get()
   if (existing.data[0]) {
-    return existing.data[0]
+    return { attempt: existing.data[0], created: false }
   }
 
   try {
     const created = await attempts.add({ data })
-    return { ...data, _id: created._id }
+    return { attempt: { ...data, _id: created._id }, created: true }
   } catch (error) {
     if (error.code !== 'duplicate_key') throw error
     const raced = await attempts.where({ _id: attemptId, ownerOpenid: openid }).get()
-    return raced.data[0] || data
+    return { attempt: raced.data[0] || data, created: false }
   }
 }
 
@@ -130,7 +132,7 @@ async function answerSubmit({ db, openid, sessionId, questionId, selectedKeys, n
 
   const normalizedSelected = normalizeSelected(selectedKeys)
   const isCorrect = sameKeys(normalizedSelected, question.answerKeys)
-  const attempt = await upsertAttempt({
+  const { attempt } = await upsertAttempt({
     db,
     openid,
     sessionId,
@@ -138,6 +140,14 @@ async function answerSubmit({ db, openid, sessionId, questionId, selectedKeys, n
     selectedKeys: normalizedSelected,
     isCorrect,
     now,
+  })
+  await recordWrongQuestionResult({
+    db,
+    openid,
+    questionId,
+    isCorrect: attempt.isCorrect,
+    now,
+    attemptId: attempt._id,
   })
 
   const attempts = await db.collection('attempts').where({ ownerOpenid: openid, sessionId }).get()
