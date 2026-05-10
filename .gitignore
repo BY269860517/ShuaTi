@@ -11,3 +11,4 @@ coverage/
 .gstack/
 .worktrees/
 uniCloud-alipay/cloudfunctions/common/uni-config-center/uni-id/config.json
+vite.config.ts.timestamp-*.mjs
