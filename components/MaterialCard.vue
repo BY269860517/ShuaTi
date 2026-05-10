@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Material } from '@/common/types'
 import { MATERIAL_STATUS_TEXT } from '@/common/constants/status'
 import { formatDate, formatFileSize } from '@/common/format'
@@ -8,6 +9,15 @@ const props = withDefaults(defineProps<{ material: Material; deleting?: boolean 
   deleting: false,
 })
 const emit = defineEmits<{ open: [id: string]; delete: [id: string] }>()
+const practicedCount = computed(() => Math.min(
+  Math.max(Number(props.material.practicedQuestionCount || 0), 0),
+  Math.max(Number(props.material.questionCount || 0), 0),
+))
+const progressPercent = computed(() => {
+  const total = Number(props.material.questionCount || 0)
+  if (total <= 0) return 0
+  return Math.round((practicedCount.value / total) * 100)
+})
 
 function statusType(status: Material['status']): 'neutral' | 'success' | 'warning' | 'danger' {
   if (status === 'ready') return 'success'
@@ -61,6 +71,16 @@ function requestDelete() {
       </view>
     </view>
 
+    <view v-if="props.material.questionCount > 0" class="material-card__progress">
+      <view class="material-card__progress-row">
+        <text class="material-card__progress-text">已刷 {{ practicedCount }}/{{ props.material.questionCount }} 题</text>
+        <text class="material-card__progress-percent">{{ progressPercent }}%</text>
+      </view>
+      <view class="material-card__progress-track">
+        <view class="material-card__progress-fill" :style="{ width: `${progressPercent}%` }" />
+      </view>
+    </view>
+
     <view class="material-card__meta">
       <text class="material-card__meta-text">{{ formatFileSize(props.material.fileSize) }}</text>
       <text class="material-card__meta-dot">·</text>
@@ -73,12 +93,13 @@ function requestDelete() {
 .material-card {
   padding: 24rpx;
   border-radius: 8rpx;
-  background: #ffffff;
-  border: 1rpx solid #dce3ec;
+  background: $surface;
+  border: 1rpx solid $border-color;
+  box-shadow: $surface-shadow;
 }
 
 .material-card--hover {
-  background: #f8fafc;
+  background: $surface-hover;
 }
 
 .material-card__header {
@@ -91,7 +112,7 @@ function requestDelete() {
   flex: 1;
   min-width: 0;
   margin-right: 20rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 30rpx;
   line-height: 42rpx;
   font-weight: 600;
@@ -111,16 +132,16 @@ function requestDelete() {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  border: 1rpx solid #d6dde8;
-  background: #ffffff;
-  color: #9f2a2a;
+  border: 1rpx solid $border-color;
+  background: $surface;
+  color: $danger;
   font-size: 24rpx;
   line-height: 52rpx;
 }
 
 .material-card__delete[disabled] {
-  color: #a4acb9;
-  background: #f2f4f7;
+  color: $text-muted;
+  background: $surface-muted;
 }
 
 .material-card__stats {
@@ -135,7 +156,7 @@ function requestDelete() {
 
 .material-card__stat-value {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 32rpx;
   line-height: 42rpx;
   font-weight: 600;
@@ -144,9 +165,40 @@ function requestDelete() {
 .material-card__stat-label {
   display: block;
   margin-top: 4rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 24rpx;
   line-height: 34rpx;
+}
+
+.material-card__progress {
+  margin-top: 20rpx;
+}
+
+.material-card__progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.material-card__progress-text,
+.material-card__progress-percent {
+  color: $text-secondary;
+  font-size: 24rpx;
+  line-height: 34rpx;
+}
+
+.material-card__progress-track {
+  height: 8rpx;
+  margin-top: 10rpx;
+  overflow: hidden;
+  border-radius: 999rpx;
+  background: $border-soft;
+}
+
+.material-card__progress-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: $brand-primary;
 }
 
 .material-card__meta {
@@ -157,7 +209,7 @@ function requestDelete() {
 
 .material-card__meta-text,
 .material-card__meta-dot {
-  color: #697586;
+  color: $text-muted;
   font-size: 24rpx;
   line-height: 34rpx;
 }

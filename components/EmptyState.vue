@@ -34,7 +34,7 @@ const emit = defineEmits<{
   flex-direction: column;
   align-items: center;
   padding: 72rpx 32rpx;
-  color: #596579;
+  color: $text-secondary;
   text-align: center;
 }
 
@@ -43,12 +43,12 @@ const emit = defineEmits<{
   height: 72rpx;
   margin-bottom: 24rpx;
   border-radius: 8rpx;
-  background: #eef2f7;
-  border: 1rpx solid #d9e1ec;
+  background: $surface-muted;
+  border: 1rpx solid $border-soft;
 }
 
 .empty-state__title {
-  color: #202938;
+  color: $text-primary;
   font-size: 32rpx;
   line-height: 44rpx;
   font-weight: 600;
@@ -57,7 +57,7 @@ const emit = defineEmits<{
 .empty-state__description {
   max-width: 560rpx;
   margin-top: 12rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
 }
@@ -68,8 +68,8 @@ const emit = defineEmits<{
   margin-top: 28rpx;
   padding: 0 28rpx;
   border-radius: 8rpx;
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
   font-size: 28rpx;
   line-height: 72rpx;
 }

@@ -304,7 +304,7 @@ function nextOptionKey(): string {
   min-height: 100vh;
   padding: 24rpx;
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .form {
@@ -315,9 +315,10 @@ function nextOptionKey(): string {
 
 .field {
   padding: 24rpx;
-  border: 1rpx solid #dce3ec;
+  border: 1rpx solid $border-color;
   border-radius: 8rpx;
-  background: #ffffff;
+  background: $surface;
+  box-shadow: $surface-shadow;
 }
 
 .field__row {
@@ -330,7 +331,7 @@ function nextOptionKey(): string {
 .field__label {
   display: block;
   margin-bottom: 16rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 30rpx;
   line-height: 42rpx;
   font-weight: 600;
@@ -346,9 +347,9 @@ function nextOptionKey(): string {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #ffffff;
-  color: #1f5f8b;
-  border: 1rpx solid #b8c7d8;
+  background: $surface;
+  color: $brand-primary;
+  border: 1rpx solid $brand-border;
   font-size: 26rpx;
   line-height: 60rpx;
 }
@@ -356,9 +357,9 @@ function nextOptionKey(): string {
 .type-control {
   display: flex;
   padding: 4rpx;
-  border: 1rpx solid #cbd5e1;
+  border: 1rpx solid $border-color;
   border-radius: 8rpx;
-  background: #eef2f7;
+  background: $surface-muted;
 }
 
 .type-control__item {
@@ -369,14 +370,14 @@ function nextOptionKey(): string {
   border: 0;
   border-radius: 6rpx;
   background: transparent;
-  color: #475467;
+  color: $text-secondary;
   font-size: 26rpx;
   line-height: 64rpx;
 }
 
 .type-control__item--active {
-  background: #ffffff;
-  color: #1f5f8b;
+  background: $surface;
+  color: $brand-primary;
   font-weight: 600;
 }
 
@@ -384,10 +385,10 @@ function nextOptionKey(): string {
 .input {
   width: 100%;
   box-sizing: border-box;
-  border: 1rpx solid #cbd5e1;
+  border: 1rpx solid $border-color;
   border-radius: 8rpx;
-  background: #ffffff;
-  color: #202938;
+  background: $surface;
+  color: $text-primary;
   font-size: 28rpx;
   line-height: 40rpx;
 }
@@ -419,9 +420,9 @@ function nextOptionKey(): string {
   width: 72rpx;
   height: 72rpx;
   box-sizing: border-box;
-  border: 1rpx solid #cbd5e1;
+  border: 1rpx solid $border-color;
   border-radius: 8rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 28rpx;
   line-height: 72rpx;
   text-align: center;
@@ -432,9 +433,9 @@ function nextOptionKey(): string {
   min-width: 0;
   height: 72rpx;
   box-sizing: border-box;
-  border: 1rpx solid #cbd5e1;
+  border: 1rpx solid $border-color;
   border-radius: 8rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 28rpx;
   line-height: 72rpx;
   padding: 0 16rpx;
@@ -447,9 +448,9 @@ function nextOptionKey(): string {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #ffffff;
-  color: #9a2f2f;
-  border: 1rpx solid #f2c3c3;
+  background: $surface;
+  color: $danger;
+  border: 1rpx solid $danger-border;
   font-size: 26rpx;
   line-height: 72rpx;
 }
@@ -467,17 +468,17 @@ function nextOptionKey(): string {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #ffffff;
-  color: #364152;
-  border: 1rpx solid #cbd5e1;
+  background: $surface;
+  color: $text-body;
+  border: 1rpx solid $border-color;
   font-size: 28rpx;
   line-height: 64rpx;
 }
 
 .answer-list__item--active {
-  background: #1f5f8b;
-  color: #ffffff;
-  border-color: #1f5f8b;
+  background: $brand-primary;
+  color: $surface;
+  border-color: $brand-primary;
 }
 
 .save-button {
@@ -486,8 +487,8 @@ function nextOptionKey(): string {
   margin: 0 0 24rpx;
   padding: 0;
   border-radius: 8rpx;
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
   font-size: 30rpx;
   line-height: 80rpx;
 }

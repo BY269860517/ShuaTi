@@ -101,6 +101,9 @@ function questionTypeText(type: string) {
       <view class="header">
         <text class="header__title">错题</text>
         <text class="header__subtitle">当前 {{ wrongQuestions.length }} 题</text>
+        <text class="header__rule">
+          答错会自动加入错题本；连续答对 3 次视为已掌握并移出当前列表。再次答错会重新加入。
+        </text>
       </view>
 
       <ErrorState v-if="errorMessage" :message="errorMessage" @retry="loadWrongQuestions" />
@@ -148,7 +151,7 @@ function questionTypeText(type: string) {
   min-height: 100vh;
   padding: 24rpx 24rpx calc(128rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .content {
@@ -163,7 +166,7 @@ function questionTypeText(type: string) {
 
 .header__title {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 36rpx;
   line-height: 48rpx;
   font-weight: 600;
@@ -172,9 +175,22 @@ function questionTypeText(type: string) {
 .header__subtitle {
   display: block;
   margin-top: 8rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
+}
+
+.header__rule {
+  display: block;
+  margin-top: 14rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid $brand-primary-soft-strong;
+  background: $brand-primary-soft;
+  color: $text-secondary;
+  font-size: 24rpx;
+  line-height: 36rpx;
+  word-break: break-word;
 }
 
 .wrong-list {
@@ -186,8 +202,9 @@ function questionTypeText(type: string) {
 .wrong-item {
   padding: 24rpx;
   border-radius: 8rpx;
-  border: 1rpx solid #dce3ec;
-  background: #ffffff;
+  border: 1rpx solid $border-color;
+  background: $surface;
+  box-shadow: $surface-shadow;
 }
 
 .wrong-item__meta {
@@ -202,15 +219,15 @@ function questionTypeText(type: string) {
   flex-shrink: 0;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
-  background: #eef4fa;
-  color: #1f5f8b;
+  background: $brand-primary-soft;
+  color: $brand-primary;
   font-size: 24rpx;
   line-height: 34rpx;
 }
 
 .wrong-item__date {
   min-width: 0;
-  color: #697586;
+  color: $text-muted;
   font-size: 24rpx;
   line-height: 34rpx;
   text-align: right;
@@ -218,7 +235,7 @@ function questionTypeText(type: string) {
 
 .wrong-item__stem {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 30rpx;
   line-height: 44rpx;
   word-break: break-word;
@@ -232,7 +249,7 @@ function questionTypeText(type: string) {
 }
 
 .wrong-item__stat {
-  color: #697586;
+  color: $text-muted;
   font-size: 24rpx;
   line-height: 34rpx;
 }
@@ -243,9 +260,9 @@ function questionTypeText(type: string) {
   margin: 22rpx 0 0;
   padding: 0;
   border-radius: 8rpx;
-  border: 1rpx solid #b8c7d8;
-  background: #ffffff;
-  color: #1f5f8b;
+  border: 1rpx solid $brand-border;
+  background: $surface;
+  color: $brand-primary;
   font-size: 28rpx;
   line-height: 72rpx;
 }
@@ -256,8 +273,8 @@ function questionTypeText(type: string) {
   right: 0;
   bottom: 0;
   padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #dce3ec;
-  background: #ffffff;
+  border-top: 1rpx solid $border-color;
+  background: $surface;
   box-sizing: border-box;
 }
 
@@ -267,8 +284,8 @@ function questionTypeText(type: string) {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
   font-size: 30rpx;
   line-height: 80rpx;
 }

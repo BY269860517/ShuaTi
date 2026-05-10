@@ -172,7 +172,7 @@ function formatAnswerKeys(gradingResult: AnswerSubmitResult): string {
   min-height: 100vh;
   padding: 24rpx 24rpx calc(128rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .content {
@@ -184,18 +184,18 @@ function formatAnswerKeys(gradingResult: AnswerSubmitResult): string {
 .grading {
   padding: 24rpx;
   border-radius: 8rpx;
-  border: 1rpx solid #f2c3c3;
-  background: #fdecec;
+  border: 1rpx solid $danger-border;
+  background: $danger-soft;
 }
 
 .grading--correct {
-  border-color: #a7d8b8;
-  background: #edf8f1;
+  border-color: $brand-success-border;
+  background: $brand-success-soft;
 }
 
 .grading__title {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 30rpx;
   line-height: 42rpx;
   font-weight: 600;
@@ -205,7 +205,7 @@ function formatAnswerKeys(gradingResult: AnswerSubmitResult): string {
 .grading__explanation {
   display: block;
   margin-top: 12rpx;
-  color: #364152;
+  color: $text-body;
   font-size: 28rpx;
   line-height: 40rpx;
   word-break: break-word;
@@ -217,8 +217,8 @@ function formatAnswerKeys(gradingResult: AnswerSubmitResult): string {
   right: 0;
   bottom: 0;
   padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #dce3ec;
-  background: #ffffff;
+  border-top: 1rpx solid $border-color;
+  background: $surface;
   box-sizing: border-box;
 }
 
@@ -228,8 +228,8 @@ function formatAnswerKeys(gradingResult: AnswerSubmitResult): string {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
   font-size: 30rpx;
   line-height: 80rpx;
 }

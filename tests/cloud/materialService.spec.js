@@ -209,6 +209,31 @@ describe('material services', () => {
     expect(result.map((material) => material.fileName)).toEqual(['new.pdf', 'old.pdf'])
   })
 
+  it('includes distinct practiced question count per material for current user', async () => {
+    const db = createFakeDb()
+    await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: ownedFileId('user_a', 'a.pdf'), fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:01:00.000Z', input: { fileID: ownedFileId('user_a', 'b.pdf'), fileName: 'b.pdf', fileSize: 1, parseMode: 'inline_answer' } })
+    await db.collection('questions').add({ data: { _id: 'q_a_1', ownerOpenid: 'user_a', materialId: 'materials_1' } })
+    await db.collection('questions').add({ data: { _id: 'q_a_2', ownerOpenid: 'user_a', materialId: 'materials_1' } })
+    await db.collection('questions').add({ data: { _id: 'q_b_1', ownerOpenid: 'user_a', materialId: 'materials_2' } })
+    await db.collection('questions').add({ data: { _id: 'q_other', ownerOpenid: 'user_b', materialId: 'materials_1' } })
+    await db.collection('attempts').add({ data: { _id: 'attempt_1', ownerOpenid: 'user_a', sessionId: 'session_1', questionId: 'q_a_1', selectedKeys: ['A'], isCorrect: true, createdAt: '2026-04-26T00:02:00.000Z' } })
+    await db.collection('attempts').add({ data: { _id: 'attempt_2', ownerOpenid: 'user_a', sessionId: 'session_2', questionId: 'q_a_1', selectedKeys: ['A'], isCorrect: true, createdAt: '2026-04-26T00:03:00.000Z' } })
+    await db.collection('attempts').add({ data: { _id: 'attempt_3', ownerOpenid: 'user_a', sessionId: 'session_3', questionId: 'q_a_2', selectedKeys: ['B'], isCorrect: false, createdAt: '2026-04-26T00:04:00.000Z' } })
+    await db.collection('attempts').add({ data: { _id: 'attempt_4', ownerOpenid: 'user_a', sessionId: 'session_4', questionId: 'q_b_1', selectedKeys: ['A'], isCorrect: true, createdAt: '2026-04-26T00:05:00.000Z' } })
+    await db.collection('attempts').add({ data: { _id: 'attempt_5', ownerOpenid: 'user_b', sessionId: 'session_5', questionId: 'q_other', selectedKeys: ['A'], isCorrect: true, createdAt: '2026-04-26T00:06:00.000Z' } })
+
+    const result = await listMaterials({ db, openid: 'user_a' })
+
+    expect(result.map((material) => ({
+      fileName: material.fileName,
+      practicedQuestionCount: material.practicedQuestionCount,
+    }))).toEqual([
+      { fileName: 'b.pdf', practicedQuestionCount: 1 },
+      { fileName: 'a.pdf', practicedQuestionCount: 2 },
+    ])
+  })
+
   it('returns detail for the material owner', async () => {
     const db = createFakeDb()
     const material = await createMaterial({ db, openid: 'user_a', now: '2026-04-26T00:00:00.000Z', input: { fileID: ownedFileId('user_a', 'a.pdf'), fileName: 'a.pdf', fileSize: 1, parseMode: 'inline_answer' } })

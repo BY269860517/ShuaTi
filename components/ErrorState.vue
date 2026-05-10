@@ -39,7 +39,7 @@ const emit = defineEmits<{
 
 .error-state__message {
   max-width: 600rpx;
-  color: #9a2f2f;
+  color: $danger;
   font-size: 28rpx;
   line-height: 40rpx;
 }
@@ -50,9 +50,9 @@ const emit = defineEmits<{
   margin-top: 24rpx;
   padding: 0 28rpx;
   border-radius: 8rpx;
-  background: #ffffff;
-  color: #1f5f8b;
-  border: 1rpx solid #b8c7d8;
+  background: $surface;
+  color: $brand-primary;
+  border: 1rpx solid $brand-border;
   font-size: 28rpx;
   line-height: 68rpx;
 }

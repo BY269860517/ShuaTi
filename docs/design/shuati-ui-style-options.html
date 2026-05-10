@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ShuaTi UI 风格方案对比</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #eef2f6;
+      color: #1f2933;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+
+    .hero {
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 10px 0 0;
+      color: #5b6775;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .variants {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+
+    .variant {
+      padding: 18px;
+      border: 1px solid #d6dee8;
+      border-radius: 12px;
+      background: #ffffff;
+    }
+
+    .variant__header {
+      margin-bottom: 16px;
+    }
+
+    .variant__kicker {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .variant h2 {
+      margin: 10px 0 6px;
+      color: #111827;
+      font-size: 18px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .variant__desc {
+      min-height: 44px;
+      margin: 0;
+      color: #637083;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 330px;
+      margin: 0 auto;
+      border-radius: 34px;
+      padding: 14px;
+      background: #151b22;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.22);
+    }
+
+    .screen {
+      min-height: 640px;
+      overflow: hidden;
+      border-radius: 26px;
+    }
+
+    .status {
+      display: flex;
+      justify-content: space-between;
+      padding: 13px 18px 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .content {
+      padding: 18px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 7px 0 0;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 54px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .card {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 13px;
+    }
+
+    .card__head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .file {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .badge {
+      flex-shrink: 0;
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 24px;
+      font-weight: 700;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 13px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .track {
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+    }
+
+    .fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .meta {
+      margin-top: 11px;
+      font-size: 12px;
+    }
+
+    .setup {
+      margin-top: 18px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .setup__label {
+      margin: 0 0 7px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .setup__num {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 750;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .chip {
+      min-width: 68px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 34px;
+      text-align: center;
+    }
+
+    .wrong {
+      margin-top: 13px;
+      padding: 14px;
+      border-radius: 8px;
+    }
+
+    .wrong__rule {
+      padding: 10px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .wrong__item {
+      margin-top: 12px;
+      padding: 13px;
+      border-radius: 8px;
+    }
+
+    .bottom {
+      margin-top: 18px;
+      height: 42px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 750;
+      line-height: 42px;
+      text-align: center;
+    }
+
+    .notes {
+      margin-top: 14px;
+      padding-left: 18px;
+      color: #536171;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .a .variant__kicker {
+      background: #e8f4fb;
+      color: #246d9d;
+    }
+
+    .a .screen {
+      background: #f5f8fb;
+      color: #202938;
+    }
+
+    .a .status,
+    .a .nav,
+    .a .subtitle,
+    .a .stat span,
+    .a .meta,
+    .a .setup__label {
+      color: #697586;
+    }
+
+    .a .btn.primary,
+    .a .bottom {
+      background: #246d9d;
+      color: #ffffff;
+    }
+
+    .a .btn.secondary,
+    .a .chip {
+      border-color: #b8c7d8;
+      background: #ffffff;
+      color: #246d9d;
+    }
+
+    .a .card,
+    .a .setup,
+    .a .wrong,
+    .a .wrong__item {
+      border: 1px solid #dce3ec;
+      background: #ffffff;
+      box-shadow: 0 4px 14px rgba(31, 95, 139, 0.05);
+    }
+
+    .a .badge {
+      background: #e8f7f1;
+      color: #1f9d7a;
+    }
+
+    .a .track {
+      background: #e7edf3;
+    }
+
+    .a .fill,
+    .a .chip.active {
+      background: #246d9d;
+      color: #ffffff;
+      border-color: #246d9d;
+    }
+
+    .a .wrong__rule {
+      border: 1px solid #d7e6f3;
+      background: #eef6fb;
+      color: #4f6475;
+    }
+
+    .b .variant__kicker {
+      background: #eef2ff;
+      color: #2643a2;
+    }
+
+    .b .screen {
+      background: #f3f6fc;
+      color: #141b34;
+    }
+
+    .b .status,
+    .b .nav,
+    .b .subtitle,
+    .b .stat span,
+    .b .meta,
+    .b .setup__label {
+      color: #667085;
+    }
+
+    .b .btn.primary,
+    .b .bottom {
+      background: #2643a2;
+      color: #ffffff;
+    }
+
+    .b .btn.secondary,
+    .b .chip {
+      border-color: #c8d1ec;
+      background: #ffffff;
+      color: #2643a2;
+    }
+
+    .b .card,
+    .b .setup,
+    .b .wrong,
+    .b .wrong__item {
+      border: 1px solid #d5ddf2;
+      background: #ffffff;
+      box-shadow: 0 8px 18px rgba(38, 67, 162, 0.08);
+    }
+
+    .b .badge {
+      background: #fff4d8;
+      color: #a46200;
+    }
+
+    .b .track {
+      background: #e1e7f7;
+    }
+
+    .b .fill,
+    .b .chip.active {
+      background: #f59e0b;
+      color: #1f2933;
+      border-color: #f59e0b;
+    }
+
+    .b .wrong__rule {
+      border: 1px solid #cad5f0;
+      background: #edf2ff;
+      color: #374b8c;
+    }
+
+    .c .variant__kicker {
+      background: #e9f5ee;
+      color: #2f7d5b;
+    }
+
+    .c .screen {
+      background: #f7f7f2;
+      color: #243228;
+    }
+
+    .c .status,
+    .c .nav,
+    .c .subtitle,
+    .c .stat span,
+    .c .meta,
+    .c .setup__label {
+      color: #6f766f;
+    }
+
+    .c .btn.primary,
+    .c .bottom {
+      background: #2f7d5b;
+      color: #ffffff;
+    }
+
+    .c .btn.secondary,
+    .c .chip {
+      border-color: #ccd8ce;
+      background: #fffefa;
+      color: #2f7d5b;
+    }
+
+    .c .card,
+    .c .setup,
+    .c .wrong,
+    .c .wrong__item {
+      border: 1px solid #d9dfd4;
+      background: #fffefa;
+      box-shadow: 0 6px 16px rgba(47, 125, 91, 0.06);
+    }
+
+    .c .badge {
+      background: #e9f5ee;
+      color: #2f7d5b;
+    }
+
+    .c .track {
+      background: #e6e6dc;
+    }
+
+    .c .fill,
+    .c .chip.active {
+      background: #5b7fa6;
+      color: #ffffff;
+      border-color: #5b7fa6;
+    }
+
+    .c .wrong__rule {
+      border: 1px solid #d7dfd7;
+      background: #f0f5ec;
+      color: #4f624f;
+    }
+
+    @media (max-width: 1120px) {
+      .variants {
+        grid-template-columns: 1fr;
+      }
+
+      .variant {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>ShuaTi UI 风格方案对比</h1>
+      <p>三套方向都保持当前业务逻辑不变，只调整视觉系统、卡片层级、按钮、状态标签和进度表达。推荐先选一个主方向，再进入 Superpowers writing-plans 落地。</p>
+    </section>
+
+    <section class="variants">
+      <article class="variant a">
+        <div class="variant__header">
+          <span class="variant__kicker">方案 A 推荐</span>
+          <h2>清爽学习工具型</h2>
+          <p class="variant__desc">克制、专业、清楚。适合长期刷题，广告位也不突兀。</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>13:40</span><span>5G 100%</span></div>
+            <div class="nav">我的资料</div>
+            <div class="content">
+              <div class="top">
+                <div>
+                  <h3 class="title">我的资料</h3>
+                  <p class="subtitle">上传 PDF 后审核解析出的候选题，再进入练习。</p>
+                </div>
+                <div class="actions">
+                  <span class="btn secondary">我的</span>
+                  <span class="btn primary">上传</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card__head">
+                  <p class="file">shuati-test-sample.pdf</p>
+                  <span class="badge">可刷题</span>
+                </div>
+                <div class="stats">
+                  <div class="stat"><strong>36</strong><span>题目</span></div>
+                  <div class="stat"><strong>0</strong><span>可导入</span></div>
+                  <div class="stat"><strong>0</strong><span>待确认</span></div>
+                  <div class="stat"><strong>0</strong><span>不可用</span></div>
+                </div>
+                <div class="progress-row"><span>已刷 12/36 题</span><span>33%</span></div>
+                <div class="track"><div class="fill" style="width:33%"></div></div>
+                <div class="meta">20 MB · 2026-05-01</div>
+              </div>
+
+              <div class="setup">
+                <p class="setup__label">可练习题目</p>
+                <p class="setup__num">36</p>
+                <div class="chips">
+                  <span class="chip active">全部练习</span>
+                  <span class="chip">随机</span>
+                  <span class="chip">未练习</span>
+                </div>
+              </div>
+
+              <div class="wrong">
+                <div class="wrong__rule">答错会自动加入错题本；连续答对 3 次视为已掌握。</div>
+                <div class="wrong__item">单选题：上传 PDF 后，系统最先需要完成什么？</div>
+              </div>
+
+              <div class="bottom">开始练习</div>
+            </div>
+          </div>
+        </div>
+        <ul class="notes">
+          <li>最适合当前产品阶段。</li>
+          <li>降低视觉噪音，突出状态和进度。</li>
+          <li>落地成本最低。</li>
+        </ul>
+      </article>
+
+      <article class="variant b">
+        <div class="variant__header">
+          <span class="variant__kicker">方案 B</span>
+          <h2>考试冲刺高对比型</h2>
+          <p class="variant__desc">更有备考冲刺感，强调进度、行动按钮和高识别状态。</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>13:40</span><span>5G 100%</span></div>
+            <div class="nav">我的资料</div>
+            <div class="content">
+              <div class="top">
+                <div>
+                  <h3 class="title">我的资料</h3>
+                  <p class="subtitle">上传资料，快速生成题库并开始冲刺。</p>
+                </div>
+                <div class="actions">
+                  <span class="btn secondary">我的</span>
+                  <span class="btn primary">上传</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card__head">
+                  <p class="file">shuati-test-sample.pdf</p>
+                  <span class="badge">待冲刺</span>
+                </div>
+                <div class="stats">
+                  <div class="stat"><strong>36</strong><span>题目</span></div>
+                  <div class="stat"><strong>0</strong><span>可导入</span></div>
+                  <div class="stat"><strong>0</strong><span>待确认</span></div>
+                  <div class="stat"><strong>0</strong><span>不可用</span></div>
+                </div>
+                <div class="progress-row"><span>已刷 12/36 题</span><span>33%</span></div>
+                <div class="track"><div class="fill" style="width:33%"></div></div>
+                <div class="meta">20 MB · 2026-05-01</div>
+              </div>
+
+              <div class="setup">
+                <p class="setup__label">本次练习</p>
+                <p class="setup__num">20</p>
+                <div class="chips">
+                  <span class="chip active">随机</span>
+                  <span class="chip">单选</span>
+                  <span class="chip">未练习</span>
+                </div>
+              </div>
+
+              <div class="wrong">
+                <div class="wrong__rule">错题自动沉淀，连续答对 3 次移出。</div>
+                <div class="wrong__item">多选题：以下哪些题型支持解析？</div>
+              </div>
+
+              <div class="bottom">开始练习</div>
+            </div>
+          </div>
+        </div>
+        <ul class="notes">
+          <li>更像备考冲刺工具。</li>
+          <li>按钮和进度更醒目。</li>
+          <li>橙色要少用，否则会抢题目注意力。</li>
+        </ul>
+      </article>
+
+      <article class="variant c">
+        <div class="variant__header">
+          <span class="variant__kicker">方案 C</span>
+          <h2>轻量成长记录型</h2>
+          <p class="variant__desc">更温和，强调持续学习和错题积累，适合长期留存。</p>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>13:40</span><span>5G 100%</span></div>
+            <div class="nav">我的资料</div>
+            <div class="content">
+              <div class="top">
+                <div>
+                  <h3 class="title">我的资料</h3>
+                  <p class="subtitle">整理资料、持续练习，把错题慢慢清掉。</p>
+                </div>
+                <div class="actions">
+                  <span class="btn secondary">我的</span>
+                  <span class="btn primary">上传</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card__head">
+                  <p class="file">shuati-test-sample.pdf</p>
+                  <span class="badge">练习中</span>
+                </div>
+                <div class="stats">
+                  <div class="stat"><strong>36</strong><span>题目</span></div>
+                  <div class="stat"><strong>0</strong><span>可导入</span></div>
+                  <div class="stat"><strong>0</strong><span>待确认</span></div>
+                  <div class="stat"><strong>0</strong><span>不可用</span></div>
+                </div>
+                <div class="progress-row"><span>已刷 12/36 题</span><span>33%</span></div>
+                <div class="track"><div class="fill" style="width:33%"></div></div>
+                <div class="meta">20 MB · 2026-05-01</div>
+              </div>
+
+              <div class="setup">
+                <p class="setup__label">今日可练</p>
+                <p class="setup__num">36</p>
+                <div class="chips">
+                  <span class="chip active">未练习</span>
+                  <span class="chip">顺序</span>
+                  <span class="chip">判断</span>
+                </div>
+              </div>
+
+              <div class="wrong">
+                <div class="wrong__rule">答错会进入错题本，掌握后自动淡出当前列表。</div>
+                <div class="wrong__item">判断题：题目必须有标准答案。</div>
+              </div>
+
+              <div class="bottom">练习错题</div>
+            </div>
+          </div>
+        </div>
+        <ul class="notes">
+          <li>更有陪伴感。</li>
+          <li>适合错题和我的页面。</li>
+          <li>效率感弱于 A 和 B。</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

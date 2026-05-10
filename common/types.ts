@@ -43,6 +43,7 @@ export interface Material {
   status: MaterialStatus
   parseMode: ParseMode
   questionCount: number
+  practicedQuestionCount: number
   readyCandidateCount: number
   needReviewCandidateCount: number
   invalidCandidateCount: number

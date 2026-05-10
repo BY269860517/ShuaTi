@@ -89,7 +89,7 @@ function goWrongBook() {
   min-height: 100vh;
   padding: 24rpx;
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .content {
@@ -104,7 +104,7 @@ function goWrongBook() {
 
 .header__title {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 36rpx;
   line-height: 48rpx;
   font-weight: 600;
@@ -113,7 +113,7 @@ function goWrongBook() {
 .header__subtitle {
   display: block;
   margin-top: 8rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
   word-break: break-all;
@@ -128,13 +128,14 @@ function goWrongBook() {
 .stat {
   padding: 24rpx;
   border-radius: 8rpx;
-  border: 1rpx solid #dce3ec;
-  background: #ffffff;
+  border: 1rpx solid $border-color;
+  background: $surface;
+  box-shadow: $surface-shadow;
 }
 
 .stat__label {
   display: block;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
 }
@@ -142,7 +143,7 @@ function goWrongBook() {
 .stat__value {
   display: block;
   margin-top: 8rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 56rpx;
   line-height: 68rpx;
   font-weight: 600;
@@ -160,16 +161,16 @@ function goWrongBook() {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  border: 1rpx solid #b8c7d8;
-  background: #ffffff;
-  color: #1f5f8b;
+  border: 1rpx solid $brand-border;
+  background: $surface;
+  color: $brand-primary;
   font-size: 30rpx;
   line-height: 80rpx;
 }
 
 .actions__button--primary {
-  border-color: #1f5f8b;
-  background: #1f5f8b;
-  color: #ffffff;
+  border-color: $brand-primary;
+  background: $brand-primary;
+  color: $surface;
 }
 </style>

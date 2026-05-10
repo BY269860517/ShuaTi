@@ -62,17 +62,17 @@ function selectOption(key: string) {
   margin-bottom: 16rpx;
   padding: 20rpx;
   border-radius: 8rpx;
-  background: #ffffff;
-  border: 1rpx solid #dce3ec;
+  background: $surface;
+  border: 1rpx solid $border-color;
 }
 
 .option-list__item--hover {
-  background: #f8fafc;
+  background: $surface-hover;
 }
 
 .option-list__item--selected {
-  background: #eaf4fb;
-  border-color: #6ea4c8;
+  background: $brand-primary-soft;
+  border-color: $brand-border-strong;
 }
 
 .option-list__key {
@@ -80,8 +80,8 @@ function selectOption(key: string) {
   width: 48rpx;
   height: 48rpx;
   border-radius: 8rpx;
-  background: #eef2f7;
-  color: #364152;
+  background: $surface-muted;
+  color: $text-body;
   font-size: 26rpx;
   line-height: 48rpx;
   text-align: center;
@@ -89,15 +89,15 @@ function selectOption(key: string) {
 }
 
 .option-list__item--selected .option-list__key {
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
 }
 
 .option-list__text {
   flex: 1;
   min-width: 0;
   margin-left: 18rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 30rpx;
   line-height: 44rpx;
   word-break: break-word;

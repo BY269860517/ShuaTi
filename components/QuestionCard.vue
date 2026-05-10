@@ -39,8 +39,9 @@ const emit = defineEmits<{ answer: [keys: string[]] }>()
 .question-card {
   padding: 28rpx;
   border-radius: 8rpx;
-  background: #ffffff;
-  border: 1rpx solid #dce3ec;
+  background: $surface;
+  border: 1rpx solid $border-color;
+  box-shadow: $surface-shadow;
 }
 
 .question-card__topline {
@@ -51,7 +52,7 @@ const emit = defineEmits<{ answer: [keys: string[]] }>()
 }
 
 .question-card__progress {
-  color: #1f5f8b;
+  color: $brand-primary;
   font-size: 26rpx;
   line-height: 36rpx;
   font-weight: 600;
@@ -59,14 +60,14 @@ const emit = defineEmits<{ answer: [keys: string[]] }>()
 
 .question-card__number {
   margin-left: 20rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 24rpx;
   line-height: 34rpx;
 }
 
 .question-card__stem {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 32rpx;
   line-height: 48rpx;
   font-weight: 600;

@@ -284,7 +284,7 @@ async function createPractice() {
   min-height: 100vh;
   padding: 24rpx 24rpx calc(128rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .content {
@@ -297,14 +297,15 @@ async function createPractice() {
 .section {
   padding: 24rpx;
   border-radius: 8rpx;
-  border: 1rpx solid #dce3ec;
-  background: #ffffff;
+  border: 1rpx solid $border-color;
+  background: $surface;
+  box-shadow: $surface-shadow;
 }
 
 .summary__label,
 .section__title {
   display: block;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
 }
@@ -312,7 +313,7 @@ async function createPractice() {
 .summary__value {
   display: block;
   margin-top: 8rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 56rpx;
   line-height: 68rpx;
   font-weight: 600;
@@ -322,7 +323,7 @@ async function createPractice() {
 .section__hint {
   display: block;
   margin-top: 12rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
   word-break: break-word;
@@ -343,18 +344,18 @@ async function createPractice() {
   margin: 0;
   padding: 0 18rpx;
   border-radius: 8rpx;
-  border: 1rpx solid #b8c7d8;
-  background: #ffffff;
-  color: #1f5f8b;
+  border: 1rpx solid $brand-border;
+  background: $surface;
+  color: $brand-primary;
   font-size: 28rpx;
   line-height: 76rpx;
   white-space: nowrap;
 }
 
 .option-button--active {
-  border-color: #1f5f8b;
-  background: #1f5f8b;
-  color: #ffffff;
+  border-color: $brand-primary;
+  background: $brand-primary;
+  color: $surface;
 }
 
 .custom-count {
@@ -371,15 +372,15 @@ async function createPractice() {
   padding: 0 20rpx;
   box-sizing: border-box;
   border-radius: 8rpx;
-  border: 1rpx solid #b8c7d8;
-  background: #ffffff;
-  color: #202938;
+  border: 1rpx solid $brand-border;
+  background: $surface;
+  color: $text-primary;
   font-size: 30rpx;
 }
 
 .custom-count__suffix {
   flex-shrink: 0;
-  color: #697586;
+  color: $text-muted;
   font-size: 28rpx;
   line-height: 40rpx;
 }
@@ -390,8 +391,8 @@ async function createPractice() {
   right: 0;
   bottom: 0;
   padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #dce3ec;
-  background: #ffffff;
+  border-top: 1rpx solid $border-color;
+  background: $surface;
   box-sizing: border-box;
 }
 
@@ -401,8 +402,8 @@ async function createPractice() {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
   font-size: 30rpx;
   line-height: 80rpx;
 }

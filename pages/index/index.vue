@@ -123,7 +123,7 @@ function openMaterial(materialId: string) {
       </view>
       <view class="toolbar__actions">
         <button class="toolbar__secondary-button" type="default" @click="goProfile">我的</button>
-        <button class="toolbar__button" type="default" @click="goUpload">上传 PDF</button>
+        <button class="toolbar__button" type="default" @click="goUpload">上传PDF</button>
       </view>
     </view>
 
@@ -157,7 +157,7 @@ function openMaterial(materialId: string) {
   min-height: 100vh;
   padding: 24rpx;
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .toolbar {
@@ -176,7 +176,7 @@ function openMaterial(materialId: string) {
 
 .toolbar__title {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 36rpx;
   line-height: 48rpx;
   font-weight: 600;
@@ -185,7 +185,7 @@ function openMaterial(materialId: string) {
 .toolbar__subtitle {
   display: block;
   margin-top: 8rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
 }
@@ -202,10 +202,11 @@ function openMaterial(materialId: string) {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
   font-size: 28rpx;
   line-height: 72rpx;
+  white-space: nowrap;
 }
 
 .toolbar__secondary-button {
@@ -214,11 +215,12 @@ function openMaterial(materialId: string) {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  border: 1rpx solid #b8c7d8;
-  background: #ffffff;
-  color: #1f5f8b;
+  border: 1rpx solid $brand-border;
+  background: $surface;
+  color: $brand-primary;
   font-size: 28rpx;
   line-height: 72rpx;
+  white-space: nowrap;
 }
 
 .material-list {
@@ -230,10 +232,10 @@ function openMaterial(materialId: string) {
 .material-list__delete-error {
   display: block;
   padding: 16rpx 20rpx;
-  border: 1rpx solid #f0c9c9;
+  border: 1rpx solid $danger-border;
   border-radius: 8rpx;
-  background: #fff7f7;
-  color: #9f2a2a;
+  background: $danger-soft;
+  color: $danger;
   font-size: 26rpx;
   line-height: 36rpx;
 }

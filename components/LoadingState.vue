@@ -23,7 +23,7 @@ const props = withDefaults(
   justify-content: center;
   min-height: 160rpx;
   padding: 32rpx;
-  color: #596579;
+  color: $text-secondary;
 }
 
 .loading-state__spinner {
@@ -31,8 +31,8 @@ const props = withDefaults(
   height: 32rpx;
   margin-right: 16rpx;
   border-radius: 50%;
-  border: 4rpx solid #d9e1ec;
-  border-top-color: #1f5f8b;
+  border: 4rpx solid $border-soft;
+  border-top-color: $brand-primary;
   animation: loading-rotate 900ms linear infinite;
 }
 

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>编辑候选题</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="phone">
+    <section class="screen">
+      <div class="status"><span>13:40</span><span>5G 100%</span></div>
+      <div class="nav">编辑题目</div>
+      <div class="content">
+        <article class="block">
+          <h2 class="section-title">题型</h2>
+          <div class="chip-row">
+            <span class="chip chip-active">单选</span>
+            <span class="chip">多选</span>
+            <span class="chip">判断</span>
+          </div>
+        </article>
+
+        <article class="block">
+          <h2 class="section-title">题干</h2>
+          <div class="textarea">在刷题小程序中，用户上传 PDF 后，系统最先需要完成的动作是什么？</div>
+        </article>
+
+        <article class="block">
+          <h2 class="section-title">选项</h2>
+          <div class="list">
+            <div style="display:flex;gap:8px;">
+              <input class="input" value="A" style="max-width:54px;text-align:center;" />
+              <input class="input" value="直接开始错题练习" />
+              <span class="btn" style="height:38px;min-width:52px;color:var(--danger);border-color:var(--danger-border);">删</span>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <input class="input" value="B" style="max-width:54px;text-align:center;" />
+              <input class="input" value="解析 PDF 并生成候选题" />
+              <span class="btn" style="height:38px;min-width:52px;color:var(--danger);border-color:var(--danger-border);">删</span>
+            </div>
+          </div>
+          <div class="btn" style="margin-top:10px;height:36px;max-width:86px;">添加</div>
+        </article>
+
+        <article class="block">
+          <h2 class="section-title">答案</h2>
+          <div class="chip-row">
+            <span class="chip">A</span>
+            <span class="chip chip-active">B</span>
+            <span class="chip">C</span>
+            <span class="chip">D</span>
+          </div>
+        </article>
+
+        <article class="block">
+          <h2 class="section-title">解析</h2>
+          <div class="textarea">上传 PDF 后，需要先解析内容并生成可审核候选题。</div>
+        </article>
+
+        <div class="bottom-fixed">
+          <div class="btn btn-primary" style="width:100%;height:42px;">保存</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+

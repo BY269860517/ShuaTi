@@ -19,6 +19,7 @@ The user-facing product stays the same:
 
 This migration is a backend platform change, not a product redesign.
 
+
 ## 2. Confirmed Decisions
 
 - Use `uniCloud-alipay` as the cloud directory.

@@ -101,8 +101,9 @@ function handleRemove() {
 .candidate-card {
   padding: 24rpx;
   border-radius: 8rpx;
-  background: #ffffff;
-  border: 1rpx solid #dce3ec;
+  background: $surface;
+  border: 1rpx solid $border-color;
+  box-shadow: $surface-shadow;
 }
 
 .candidate-card__header {
@@ -122,7 +123,7 @@ function handleRemove() {
 
 .candidate-card__number {
   margin-right: 16rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 28rpx;
   line-height: 40rpx;
   font-weight: 600;
@@ -142,26 +143,26 @@ function handleRemove() {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #ffffff;
-  border: 1rpx solid #b8c7d8;
+  background: $surface;
+  border: 1rpx solid $brand-border;
   font-size: 26rpx;
   line-height: 60rpx;
 }
 
 .candidate-card__edit {
-  color: #1f5f8b;
+  color: $brand-primary;
 }
 
 .candidate-card__remove {
-  color: #9f2a2a;
-  border-color: #f0c9c9;
+  color: $danger;
+  border-color: $danger-border;
 }
 
 .candidate-card__readonly,
 .candidate-card__imported {
   flex-shrink: 0;
   margin-left: 16rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 40rpx;
 }
@@ -169,7 +170,7 @@ function handleRemove() {
 .candidate-card__stem {
   display: block;
   margin-top: 20rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 30rpx;
   line-height: 44rpx;
   word-break: break-word;
@@ -190,8 +191,8 @@ function handleRemove() {
   width: 48rpx;
   height: 48rpx;
   border-radius: 8rpx;
-  background: #eef2f7;
-  color: #364152;
+  background: $surface-muted;
+  color: $text-body;
   font-size: 26rpx;
   line-height: 48rpx;
   text-align: center;
@@ -202,7 +203,7 @@ function handleRemove() {
   flex: 1;
   min-width: 0;
   margin-left: 16rpx;
-  color: #364152;
+  color: $text-body;
   font-size: 28rpx;
   line-height: 42rpx;
   word-break: break-word;
@@ -217,7 +218,7 @@ function handleRemove() {
 .candidate-card__detail-label {
   flex-shrink: 0;
   width: 72rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
 }
@@ -225,7 +226,7 @@ function handleRemove() {
 .candidate-card__detail-text {
   flex: 1;
   min-width: 0;
-  color: #364152;
+  color: $text-body;
   font-size: 26rpx;
   line-height: 38rpx;
   word-break: break-word;
@@ -235,13 +236,13 @@ function handleRemove() {
   margin-top: 18rpx;
   padding: 16rpx;
   border-radius: 8rpx;
-  background: #fdecec;
-  border: 1rpx solid #f2c3c3;
+  background: $danger-soft;
+  border: 1rpx solid $danger-border;
 }
 
 .candidate-card__error {
   display: block;
-  color: #9a2f2f;
+  color: $danger;
   font-size: 24rpx;
   line-height: 36rpx;
 }

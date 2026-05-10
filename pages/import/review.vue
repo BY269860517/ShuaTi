@@ -205,7 +205,7 @@ function statusType(status: CandidateStatus): 'neutral' | 'success' | 'warning' 
   min-height: 100vh;
   padding: 24rpx 24rpx calc(128rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .groups {
@@ -222,7 +222,7 @@ function statusType(status: CandidateStatus): 'neutral' | 'success' | 'warning' 
 }
 
 .group__count {
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
 }
@@ -239,8 +239,8 @@ function statusType(status: CandidateStatus): 'neutral' | 'success' | 'warning' 
   right: 0;
   bottom: 0;
   padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
-  background: #ffffff;
-  border-top: 1rpx solid #dce3ec;
+  background: $surface;
+  border-top: 1rpx solid $border-color;
   box-sizing: border-box;
 }
 
@@ -250,8 +250,8 @@ function statusType(status: CandidateStatus): 'neutral' | 'success' | 'warning' 
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
   font-size: 30rpx;
   line-height: 80rpx;
 }

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>上传 PDF</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="phone">
+    <section class="screen">
+      <div class="status"><span>13:40</span><span>5G 100%</span></div>
+      <div class="nav">上传 PDF</div>
+      <div class="content">
+        <article class="block">
+          <h2 class="section-title">解析方式</h2>
+          <div class="chip-row">
+            <span class="chip chip-active">题后答案</span>
+            <span class="chip">末尾答案</span>
+          </div>
+        </article>
+
+        <article class="block">
+          <h2 class="section-title">PDF 文件</h2>
+          <div class="btn" style="width:100%;height:40px;">选择 PDF</div>
+          <div class="meta" style="margin-top:12px;">shuati-test-sample.pdf</div>
+          <div class="meta">165.6 KB</div>
+          <div class="rule">
+            <div>文件大小不超过 20MB。</div>
+            <div>目前支持单选题、多选题、判断题。</div>
+            <div>题目必须有选项和标准答案，否则会进入待确认或不可用。</div>
+          </div>
+        </article>
+
+        <article class="block" style="border-color:var(--danger-border);background:var(--danger-soft);">
+          <p class="small-text" style="color:var(--danger);">示例错误：文件大小超过 20MB，请重新选择。</p>
+        </article>
+
+        <div class="bottom-fixed">
+          <div class="btn btn-primary" style="width:100%;height:42px;">上传并解析</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+

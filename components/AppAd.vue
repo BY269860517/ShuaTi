@@ -20,7 +20,7 @@ function handleError(error: unknown) {
 .app-ad {
   overflow: hidden;
   border-radius: 8rpx;
-  background: #ffffff;
+  background: $surface;
 }
 
 .app-ad__unit {

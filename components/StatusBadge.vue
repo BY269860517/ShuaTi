@@ -18,7 +18,10 @@ const props = withDefaults(
 
 <style scoped lang="scss">
 .status-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56rpx;
   min-height: 40rpx;
   padding: 0 16rpx;
   border-radius: 8rpx;
@@ -29,26 +32,26 @@ const props = withDefaults(
 }
 
 .status-badge--neutral {
-  color: #3f4a5a;
-  background: #eef2f7;
-  border: 1rpx solid #d8e0ea;
+  color: $text-secondary;
+  background: $surface-muted;
+  border: 1rpx solid $border-color;
 }
 
 .status-badge--success {
-  color: #16643f;
-  background: #e9f7ef;
-  border: 1rpx solid #bfe6cf;
+  color: $brand-success-deep;
+  background: $brand-success-soft;
+  border: 1rpx solid $brand-success-border;
 }
 
 .status-badge--warning {
-  color: #7a4b08;
-  background: #fff5df;
-  border: 1rpx solid #efd49c;
+  color: $warning;
+  background: $warning-soft;
+  border: 1rpx solid $warning-border;
 }
 
 .status-badge--danger {
-  color: #9a2f2f;
-  background: #fdecec;
-  border: 1rpx solid #f2c3c3;
+  color: $danger;
+  background: $danger-soft;
+  border: 1rpx solid $danger-border;
 }
 </style>

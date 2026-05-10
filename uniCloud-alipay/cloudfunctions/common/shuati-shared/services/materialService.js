@@ -48,7 +48,7 @@ function createMaterialNotFoundError() {
   return createError('material_not_found', '资料不存在')
 }
 
-function summarizeMaterial(material) {
+function summarizeMaterial(material, practicedQuestionCount = 0) {
   return {
     _id: material._id,
     fileName: material.fileName,
@@ -56,6 +56,7 @@ function summarizeMaterial(material) {
     status: material.status,
     parseMode: material.parseMode,
     questionCount: material.questionCount || 0,
+    practicedQuestionCount,
     readyCandidateCount: material.readyCandidateCount || 0,
     needReviewCandidateCount: material.needReviewCandidateCount || 0,
     invalidCandidateCount: material.invalidCandidateCount || 0,
@@ -65,6 +66,28 @@ function summarizeMaterial(material) {
     deletedAt: material.deletedAt || '',
     ownerOpenid: material.ownerOpenid,
   }
+}
+
+async function getPracticedQuestionCountsByMaterial({ db, openid }) {
+  const attempts = await db.collection('attempts').where({ ownerOpenid: openid }).get()
+  const attemptedQuestionIds = [...new Set(attempts.data.map((attempt) => attempt.questionId).filter(Boolean))]
+  if (attemptedQuestionIds.length === 0) return new Map()
+
+  const questions = await db.collection('questions').where({ ownerOpenid: openid }).get()
+  const attemptedQuestionIdsSet = new Set(attemptedQuestionIds)
+  const materialQuestionIds = new Map()
+
+  for (const question of questions.data) {
+    if (!attemptedQuestionIdsSet.has(question._id) || !question.materialId) continue
+    if (!materialQuestionIds.has(question.materialId)) materialQuestionIds.set(question.materialId, new Set())
+    materialQuestionIds.get(question.materialId).add(question._id)
+  }
+
+  const counts = new Map()
+  for (const [materialId, questionIds] of materialQuestionIds.entries()) {
+    counts.set(materialId, questionIds.size)
+  }
+  return counts
 }
 
 async function createMaterial({ db, openid, now, input }) {
@@ -97,7 +120,10 @@ async function createMaterial({ db, openid, now, input }) {
 
 async function listMaterials({ db, openid }) {
   const result = await db.collection('materials').where({ ownerOpenid: openid }).orderBy('createdAt', 'desc').get()
-  return result.data.filter((material) => !isMaterialDeleted(material)).map(summarizeMaterial)
+  const practicedCounts = await getPracticedQuestionCountsByMaterial({ db, openid })
+  return result.data
+    .filter((material) => !isMaterialDeleted(material))
+    .map((material) => summarizeMaterial(material, practicedCounts.get(material._id) || 0))
 }
 
 async function findMaterialForOwner({ db, openid, materialId, includeDeleted = false }) {

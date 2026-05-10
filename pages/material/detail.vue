@@ -251,7 +251,7 @@ function goMaterialWrong() {
   min-height: 100vh;
   padding: 24rpx;
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .content {
@@ -264,9 +264,10 @@ function goMaterialWrong() {
 .stats,
 .notice {
   padding: 24rpx;
-  border: 1rpx solid #dce3ec;
+  border: 1rpx solid $border-color;
   border-radius: 8rpx;
-  background: #ffffff;
+  background: $surface;
+  box-shadow: $surface-shadow;
 }
 
 .summary__header {
@@ -279,7 +280,7 @@ function goMaterialWrong() {
   flex: 1;
   min-width: 0;
   margin-right: 20rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 32rpx;
   line-height: 44rpx;
   font-weight: 600;
@@ -294,7 +295,7 @@ function goMaterialWrong() {
 
 .summary__meta-text,
 .summary__meta-dot {
-  color: #697586;
+  color: $text-muted;
   font-size: 24rpx;
   line-height: 34rpx;
 }
@@ -314,7 +315,7 @@ function goMaterialWrong() {
 
 .stat__value {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 38rpx;
   line-height: 48rpx;
   font-weight: 600;
@@ -323,23 +324,23 @@ function goMaterialWrong() {
 .stat__label {
   display: block;
   margin-top: 6rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 24rpx;
   line-height: 34rpx;
 }
 
 .notice--warning {
-  background: #fffaf0;
-  border-color: #efd49c;
+  background: $warning-soft;
+  border-color: $warning-border;
 }
 
 .notice--danger {
-  background: #fdecec;
-  border-color: #f2c3c3;
+  background: $danger-soft;
+  border-color: $danger-border;
 }
 
 .notice__text {
-  color: #364152;
+  color: $text-body;
   font-size: 28rpx;
   line-height: 40rpx;
   word-break: break-word;
@@ -357,16 +358,16 @@ function goMaterialWrong() {
   margin: 0;
   padding: 0;
   border-radius: 8rpx;
-  background: #ffffff;
-  color: #1f5f8b;
-  border: 1rpx solid #b8c7d8;
+  background: $surface;
+  color: $brand-primary;
+  border: 1rpx solid $brand-border;
   font-size: 30rpx;
   line-height: 80rpx;
 }
 
 .actions__button--primary {
-  background: #1f5f8b;
-  color: #ffffff;
-  border-color: #1f5f8b;
+  background: $brand-primary;
+  color: $surface;
+  border-color: $brand-primary;
 }
 </style>

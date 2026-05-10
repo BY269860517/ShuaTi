@@ -192,21 +192,22 @@ function sanitizeCloudFileName(fileName: string): string {
   min-height: 100vh;
   padding: 24rpx;
   box-sizing: border-box;
-  background: #f6f7f9;
+  background: $background;
 }
 
 .section {
   margin-bottom: 24rpx;
   padding: 24rpx;
-  border: 1rpx solid #dce3ec;
+  border: 1rpx solid $border-color;
   border-radius: 8rpx;
-  background: #ffffff;
+  background: $surface;
+  box-shadow: $surface-shadow;
 }
 
 .section__title {
   display: block;
   margin-bottom: 20rpx;
-  color: #202938;
+  color: $text-primary;
   font-size: 30rpx;
   line-height: 42rpx;
   font-weight: 600;
@@ -215,9 +216,9 @@ function sanitizeCloudFileName(fileName: string): string {
 .mode-control {
   display: flex;
   padding: 4rpx;
-  border: 1rpx solid #cbd5e1;
+  border: 1rpx solid $border-color;
   border-radius: 8rpx;
-  background: #eef2f7;
+  background: $surface-muted;
 }
 
 .mode-control__item {
@@ -227,15 +228,15 @@ function sanitizeCloudFileName(fileName: string): string {
   padding: 0 12rpx;
   border-radius: 6rpx;
   background: transparent;
-  color: #475467;
+  color: $text-secondary;
   border: 0;
   font-size: 28rpx;
   line-height: 68rpx;
 }
 
 .mode-control__item--active {
-  background: #ffffff;
-  color: #1f5f8b;
+  background: $surface;
+  color: $brand-primary;
   font-weight: 600;
 }
 
@@ -251,20 +252,20 @@ function sanitizeCloudFileName(fileName: string): string {
 }
 
 .file-button {
-  background: #ffffff;
-  color: #1f5f8b;
-  border: 1rpx solid #b8c7d8;
+  background: $surface;
+  color: $brand-primary;
+  border: 1rpx solid $brand-border;
 }
 
 .file-info {
   margin-top: 20rpx;
   padding-top: 20rpx;
-  border-top: 1rpx solid #eef2f7;
+  border-top: 1rpx solid $surface-muted;
 }
 
 .file-info__name {
   display: block;
-  color: #202938;
+  color: $text-primary;
   font-size: 28rpx;
   line-height: 40rpx;
   word-break: break-all;
@@ -274,7 +275,7 @@ function sanitizeCloudFileName(fileName: string): string {
 .hint {
   display: block;
   margin-top: 8rpx;
-  color: #697586;
+  color: $text-muted;
   font-size: 26rpx;
   line-height: 38rpx;
 }
@@ -282,12 +283,12 @@ function sanitizeCloudFileName(fileName: string): string {
 .upload-guidance {
   margin-top: 20rpx;
   padding-top: 20rpx;
-  border-top: 1rpx solid #eef2f7;
+  border-top: 1rpx solid $surface-muted;
 }
 
 .upload-guidance__item {
   display: block;
-  color: #475467;
+  color: $text-secondary;
   font-size: 26rpx;
   line-height: 38rpx;
 }
@@ -301,7 +302,7 @@ function sanitizeCloudFileName(fileName: string): string {
 }
 
 .actions__primary {
-  background: #1f5f8b;
-  color: #ffffff;
+  background: $brand-primary;
+  color: $surface;
 }
 </style>
