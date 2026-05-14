@@ -215,28 +215,28 @@ function sanitizeCloudFileName(fileName: string): string {
 
 .mode-control {
   display: flex;
-  padding: 4rpx;
-  border: 1rpx solid $border-color;
-  border-radius: 8rpx;
-  background: $surface-muted;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
 .mode-control__item {
-  flex: 1;
+  min-width: 148rpx;
   height: 68rpx;
   margin: 0;
-  padding: 0 12rpx;
-  border-radius: 6rpx;
-  background: transparent;
-  color: $text-secondary;
-  border: 0;
+  padding: 0 20rpx;
+  border-radius: 8rpx;
+  background: $surface;
+  color: $brand-primary;
+  border: 1rpx solid $brand-border;
   font-size: 28rpx;
   line-height: 68rpx;
+  white-space: nowrap;
 }
 
 .mode-control__item--active {
-  background: $surface;
-  color: $brand-primary;
+  background: $brand-primary;
+  color: $surface;
+  border-color: $brand-primary;
   font-weight: 600;
 }
 
@@ -258,9 +258,7 @@ function sanitizeCloudFileName(fileName: string): string {
 }
 
 .file-info {
-  margin-top: 20rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid $surface-muted;
+  margin-top: 18rpx;
 }
 
 .file-info__name {
@@ -281,16 +279,18 @@ function sanitizeCloudFileName(fileName: string): string {
 }
 
 .upload-guidance {
-  margin-top: 20rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid $surface-muted;
+  margin-top: 18rpx;
+  padding: 16rpx 18rpx;
+  border: 1rpx solid $brand-primary-soft-strong;
+  border-radius: 8rpx;
+  background: $brand-primary-soft;
 }
 
 .upload-guidance__item {
   display: block;
   color: $text-secondary;
   font-size: 26rpx;
-  line-height: 38rpx;
+  line-height: 36rpx;
 }
 
 .upload-guidance__item + .upload-guidance__item {
@@ -298,11 +298,25 @@ function sanitizeCloudFileName(fileName: string): string {
 }
 
 .actions {
-  padding-top: 12rpx;
+  position: sticky;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin-top: 20rpx;
+  padding: 16rpx 0 calc(16rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid $border-color;
+  background: $surface;
 }
 
 .actions__primary {
+  border: 1rpx solid $brand-primary;
   background: $brand-primary;
   color: $surface;
+}
+
+.actions__primary[disabled] {
+  border-color: $border-color;
+  background: $surface-muted;
+  color: $text-muted;
 }
 </style>

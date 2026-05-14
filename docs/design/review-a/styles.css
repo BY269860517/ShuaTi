@@ -204,6 +204,32 @@ body {
   color: #fff;
 }
 
+.btn-danger {
+  border-color: var(--danger-border);
+  background: var(--surface);
+  color: var(--danger);
+}
+
+.btn-compact {
+  min-width: 52px;
+  height: 34px;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.card-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

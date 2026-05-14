@@ -196,8 +196,9 @@ function nextOptionKey(): string {
   <view class="page">
     <LoadingState v-if="loading" text="正在加载候选题" />
 
-    <view v-else class="form">
-      <ErrorState v-if="errorMessage" :message="errorMessage" retry-text="" />
+    <view v-else class="content">
+      <view class="form">
+        <ErrorState v-if="errorMessage" :message="errorMessage" retry-text="" />
 
       <view class="field">
         <text class="field__label">题型</text>
@@ -286,15 +287,19 @@ function nextOptionKey(): string {
         />
       </view>
 
-      <button
-        class="save-button"
-        type="default"
-        :loading="saving"
-        :disabled="saving"
-        @click="saveCandidate"
-      >
-        {{ saving ? '保存中' : '保存' }}
-      </button>
+      </view>
+
+      <view class="bottom-actions">
+        <button
+          class="save-button"
+          type="default"
+          :loading="saving"
+          :disabled="saving"
+          @click="saveCandidate"
+        >
+          {{ saving ? '保存中' : '保存' }}
+        </button>
+      </view>
     </view>
   </view>
 </template>
@@ -302,11 +307,12 @@ function nextOptionKey(): string {
 <style scoped lang="scss">
 .page {
   min-height: 100vh;
-  padding: 24rpx;
+  padding: 24rpx 24rpx calc(128rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: $background;
 }
 
+.content,
 .form {
   display: flex;
   flex-direction: column;
@@ -356,29 +362,29 @@ function nextOptionKey(): string {
 
 .type-control {
   display: flex;
-  padding: 4rpx;
-  border: 1rpx solid $border-color;
-  border-radius: 8rpx;
-  background: $surface-muted;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
 .type-control__item {
-  flex: 1;
-  height: 64rpx;
+  min-width: 148rpx;
+  height: 68rpx;
   margin: 0;
-  padding: 0 8rpx;
-  border: 0;
-  border-radius: 6rpx;
-  background: transparent;
-  color: $text-secondary;
+  padding: 0 20rpx;
+  border: 1rpx solid $brand-border;
+  border-radius: 8rpx;
+  background: $surface;
+  color: $brand-primary;
   font-size: 26rpx;
-  line-height: 64rpx;
+  line-height: 68rpx;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .type-control__item--active {
-  background: $surface;
-  color: $brand-primary;
-  font-weight: 600;
+  border-color: $brand-primary;
+  background: $brand-primary;
+  color: $surface;
 }
 
 .textarea,
@@ -484,12 +490,30 @@ function nextOptionKey(): string {
 .save-button {
   width: 100%;
   height: 80rpx;
-  margin: 0 0 24rpx;
+  margin: 0;
   padding: 0;
   border-radius: 8rpx;
+  border: 1rpx solid $brand-primary;
   background: $brand-primary;
   color: $surface;
   font-size: 30rpx;
   line-height: 80rpx;
+}
+
+.save-button[disabled] {
+  border-color: $border-color;
+  background: $surface-muted;
+  color: $text-muted;
+}
+
+.bottom-actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid $border-color;
+  background: $surface;
+  box-sizing: border-box;
 }
 </style>

@@ -204,6 +204,10 @@ function goMaterialWrong() {
           <text class="stat__value">{{ material.invalidCandidateCount }}</text>
           <text class="stat__label">不可导入</text>
         </view>
+        <view class="stat">
+          <text class="stat__value">{{ material.questionCount }}</text>
+          <text class="stat__label">题目总数</text>
+        </view>
       </view>
 
       <view v-if="material.status === 'parsing'" class="notice notice--warning">
@@ -305,7 +309,9 @@ function goMaterialWrong() {
 }
 
 .stats {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12rpx;
 }
 
 .stat {
